@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>童綜合醫院 · 批價課 批價課交班與個案追蹤系統</title>
+  <title>童綜合醫院 · 批價課交班與個案追蹤系統</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
   <style>
@@ -24,7 +24,6 @@
     body {
       font-family: 'Noto Sans TC', -apple-system, BlinkMacSystemFont, sans-serif;
     }
-    /* 自訂捲軸樣式 */
     ::-webkit-scrollbar { width: 6px; height: 6px; }
     ::-webkit-scrollbar-track { background: #f1f5f9; }
     ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 9999px; }
@@ -37,7 +36,6 @@
   <div id="loginView" class="min-h-screen flex items-center justify-center p-4 bg-gradient-to-br from-slate-900 via-teal-950 to-slate-900">
     <div class="bg-white rounded-3xl shadow-2xl w-full max-w-md p-8 border border-teal-100/20">
       <div class="text-center mb-7">
-        <!-- 單位官方 LOGO（滿版呈現，支援多重備援與自動容錯顯示） -->
         <div class="w-20 h-20 bg-white rounded-2xl flex items-center justify-center mx-auto mb-4 shadow-md border border-teal-100 overflow-hidden">
           <img src="https://lh3.googleusercontent.com/d/1ss6M3mIsixuq0QHM_wDIb9c_uPg1FD6q"
             alt="童綜合醫院批價課 LOGO"
@@ -50,7 +48,7 @@
         </div>
         <h1 class="text-2xl font-bold text-slate-800 tracking-tight">批價課交班與個案追蹤系統</h1>
         <p class="text-xs text-slate-500 mt-2 leading-relaxed">
-          本系統僅供單位授權人員使用與查閱<br>請輸入您的員工代號以驗證進入
+          本系統僅供單位授權人員使用與查閱<br>請輸入您的員工代號及課內指定密碼進入
         </p>
       </div>
 
@@ -62,15 +60,32 @@
               <i class="fa-regular fa-id-badge text-base"></i>
             </span>
             <input type="text" id="staffIdInput" autocomplete="off"
-              onkeydown="if(event.key==='Enter') handleLogin()"
+              onkeydown="if(event.key==='Enter') document.getElementById('deptPassInput').focus()"
               class="w-full pl-10 pr-4 py-3 border border-slate-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-teal-600 focus:border-teal-600 text-sm transition"
               placeholder="請輸入員工代號">
           </div>
         </div>
 
+        <div>
+          <label for="deptPassInput" class="block text-xs font-bold text-slate-700 mb-1.5">單位指定密碼</label>
+          <div class="relative">
+            <span class="absolute inset-y-0 left-0 pl-3.5 flex items-center text-slate-400">
+              <i class="fa-solid fa-key text-sm"></i>
+            </span>
+            <input type="password" id="deptPassInput" autocomplete="current-password"
+              onkeydown="if(event.key==='Enter') handleLogin()"
+              class="w-full pl-10 pr-10 py-3 border border-slate-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-teal-600 focus:border-teal-600 text-sm transition"
+              placeholder="請輸入課內公告之指定密碼">
+            <button type="button" onclick="togglePassVisibility('deptPassInput', this)"
+              class="absolute inset-y-0 right-0 pr-3.5 flex items-center text-slate-400 hover:text-slate-600 cursor-pointer">
+              <i class="fa-regular fa-eye text-sm"></i>
+            </button>
+          </div>
+        </div>
+
         <div id="loginError" class="hidden bg-rose-50 border border-rose-200 text-rose-600 px-3.5 py-2.5 rounded-xl text-xs flex items-center gap-2 font-medium">
           <i class="fa-solid fa-circle-exclamation shrink-0"></i>
-          <span id="loginErrorText">無效的員工代號，或尚未開通權限</span>
+          <span id="loginErrorText">員工代號或指定密碼錯誤</span>
         </div>
 
         <button id="loginBtn" onclick="handleLogin()"
@@ -84,11 +99,9 @@
 
   <!-- ==================== 2. 主系統畫面 ==================== -->
   <div id="mainView" class="hidden flex-1 flex flex-col">
-    <!-- 頂部導覽列 -->
     <header class="bg-teal-900 text-white sticky top-0 z-30 shadow-md">
       <div class="max-w-6xl mx-auto px-4 py-3 flex flex-wrap items-center justify-between gap-3">
         <div class="flex items-center gap-3">
-          <!-- 導覽列官方 LOGO（滿版呈現） -->
           <div class="w-11 h-11 bg-white rounded-xl flex items-center justify-center shadow-sm border border-teal-500/40 shrink-0 overflow-hidden">
             <img src="https://lh3.googleusercontent.com/d/1ss6M3mIsixuq0QHM_wDIb9c_uPg1FD6q"
               alt="童綜合醫院批價課 LOGO"
@@ -104,8 +117,8 @@
           </div>
         </div>
 
-        <div class="flex items-center gap-2.5 sm:gap-3">
-          <!-- 字體大小切換（小 / 標準 / 大） -->
+        <div class="flex items-center gap-2 sm:gap-3 flex-wrap">
+          <!-- 字體大小三段切換 -->
           <div class="flex items-center bg-teal-950/60 border border-teal-700/60 p-0.5 rounded-xl" title="調整畫面字體大小">
             <button type="button" id="fontBtnSm" onclick="setFontScale('sm')"
               class="px-2 py-1 rounded-lg text-[11px] font-bold text-teal-200 hover:text-white transition cursor-pointer">小</button>
@@ -115,15 +128,15 @@
               class="px-2 py-1 rounded-lg text-[11px] font-bold text-teal-200 hover:text-white transition cursor-pointer">大</button>
           </div>
 
-          <!-- 主管專用：追蹤類別管理按鈕 -->
+          <!-- 主管專用：管理類別與快選按鈕 -->
           <button id="manageCategoriesBtn" onclick="openCategoryManager()"
             class="hidden bg-amber-500/20 hover:bg-amber-500/30 text-amber-200 border border-amber-400/40 px-3 py-2 rounded-xl text-xs font-bold transition flex items-center gap-1.5 cursor-pointer"
-            title="主管權限：增刪追蹤類別">
-            <i class="fa-solid fa-tags"></i>
-            <span class="hidden sm:inline">管理類別</span>
+            title="主管權限：增修子類別與催款/催繳信快選選項">
+            <i class="fa-solid fa-sliders"></i>
+            <span>管理類別與快選</span>
           </button>
 
-          <!-- 登入者資訊與主管權限徽章 -->
+          <!-- 登入者資訊 -->
           <div class="flex items-center gap-2 bg-teal-950/60 border border-teal-700/60 px-3 py-1.5 rounded-xl">
             <i class="fa-solid fa-user-check text-teal-300 text-xs"></i>
             <span id="userInfoDisplay" class="text-xs font-bold text-white"></span>
@@ -148,7 +161,7 @@
         </div>
       </div>
 
-      <!-- 雙分頁切換列 -->
+      <!-- 雙分頁頁籤列 -->
       <div class="bg-white border-b border-slate-200 text-slate-700">
         <div class="max-w-6xl mx-auto px-4 flex gap-2 sm:gap-6">
           <button onclick="switchTab('general')" id="tabGeneral"
@@ -168,12 +181,10 @@
       </div>
     </header>
 
-    <!-- 主要工作區 -->
-    <main class="flex-1 max-w-6xl w-full mx-auto px-4 py-6 space-y-5">
-      <!-- 搜尋、狀態篩選與新增按鈕列 -->
+    <main class="flex-1 max-w-6xl w-full mx-auto px-4 py-6 space-y-4">
+      <!-- 頂部工具列：狀態切換 / 關鍵字搜尋 / 日期排序 / 匯出與新增 -->
       <div class="bg-white p-4 rounded-2xl shadow-sm border border-slate-200 flex flex-col md:flex-row justify-between items-stretch md:items-center gap-3">
         <div class="flex flex-col sm:flex-row flex-1 gap-2.5">
-          <!-- 狀態篩選 (僅在費用追蹤分頁顯示) -->
           <div id="statusFilterWrapper" class="hidden flex items-center bg-slate-100 p-1 rounded-xl border border-slate-200 shrink-0">
             <button onclick="setArrearsFilter('未結案')" id="filterUnresolved"
               class="px-3 py-1.5 rounded-lg text-xs font-bold bg-white text-teal-800 shadow-sm transition cursor-pointer">
@@ -189,7 +200,6 @@
             </button>
           </div>
 
-          <!-- 關鍵字即時搜尋 -->
           <div class="relative flex-1 max-w-md">
             <span class="absolute inset-y-0 left-0 pl-3.5 flex items-center text-slate-400">
               <i class="fa-solid fa-magnifying-glass text-xs"></i>
@@ -202,7 +212,6 @@
             </button>
           </div>
 
-          <!-- 交班日期排序切換 -->
           <div class="relative shrink-0">
             <select id="dateSortOrder" onchange="renderCurrentTab()"
               class="w-full sm:w-auto px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs sm:text-sm font-semibold text-slate-700 focus:outline-none focus:ring-2 focus:ring-teal-600 focus:bg-white transition cursor-pointer">
@@ -248,11 +257,11 @@
         </button>
       </div>
 
-      <!-- 大類別快速篩選列 (僅在病人費用與行政交班分頁顯示) -->
-      <div id="mainCatFilterBar" class="hidden flex flex-wrap items-center gap-2">
-        <span class="text-xs font-bold text-slate-500 mr-1"><i class="fa-solid fa-filter mr-1"></i>大類別篩選：</span>
+      <!-- 大類別快速篩選標籤列（僅費用分頁顯示） -->
+      <div id="mainCatFilterBar" class="hidden flex flex-wrap items-center gap-2 bg-white px-4 py-2.5 rounded-2xl shadow-sm border border-slate-200">
+        <span class="text-xs font-bold text-slate-600 mr-1"><i class="fa-solid fa-filter text-teal-700 mr-1"></i>大類別篩選：</span>
         <button onclick="setMainCatFilter('ALL')" id="filterMainAll"
-          class="px-3 py-1 rounded-full text-xs font-bold bg-slate-800 text-white shadow-xs transition cursor-pointer">全部</button>
+          class="px-3 py-1 rounded-full text-xs font-bold bg-slate-800 text-white shadow-2xs transition cursor-pointer">全部</button>
         <button onclick="setMainCatFilter('欠費')" id="filterMainArrears"
           class="px-3 py-1 rounded-full text-xs font-bold bg-white text-rose-700 border border-rose-200 hover:bg-rose-50 transition cursor-pointer">🔴 欠費</button>
         <button onclick="setMainCatFilter('退費')" id="filterMainRefund"
@@ -261,7 +270,20 @@
           class="px-3 py-1 rounded-full text-xs font-bold bg-white text-emerald-700 border border-emerald-200 hover:bg-emerald-50 transition cursor-pointer">🟢 行政業務</button>
       </div>
 
-      <!-- 資料列表容器 -->
+      <!-- 催繳進度快速篩選列（僅費用分頁顯示） -->
+      <div id="collectionFilterBar" class="hidden flex flex-wrap items-center gap-2 bg-white px-4 py-2.5 rounded-2xl shadow-sm border border-slate-200">
+        <span class="text-xs font-bold text-slate-600 mr-1"><i class="fa-solid fa-phone-volume text-teal-700 mr-1"></i>催繳進度篩選：</span>
+        <button onclick="setCollectionFilter('ALL')" id="colFilterAll"
+          class="px-3 py-1 rounded-full text-xs font-bold bg-teal-700 text-white shadow-2xs transition cursor-pointer">全部</button>
+        <button onclick="setCollectionFilter('NONE')" id="colFilterNone"
+          class="px-3 py-1 rounded-full text-xs font-bold bg-amber-50 text-amber-800 border border-amber-200 hover:bg-amber-100 transition cursor-pointer">⚠️ 尚未催款或寄信</button>
+        <button onclick="setCollectionFilter('CALLED')" id="colFilterCalled"
+          class="px-3 py-1 rounded-full text-xs font-bold bg-indigo-50 text-indigo-700 border border-indigo-200 hover:bg-indigo-100 transition cursor-pointer">📞 已電催</button>
+        <button onclick="setCollectionFilter('LETTER')" id="colFilterLetter"
+          class="px-3 py-1 rounded-full text-xs font-bold bg-purple-50 text-purple-700 border border-purple-200 hover:bg-purple-100 transition cursor-pointer">✉️ 已寄催繳信</button>
+      </div>
+
+      <!-- 資料卡片列表容器 -->
       <div id="listContainer" class="space-y-4"></div>
     </main>
   </div>
@@ -296,14 +318,19 @@
           <label class="block text-xs font-bold text-slate-700 mb-1">交班內容 <span class="text-rose-500">*</span></label>
           <textarea id="genContent" rows="5"
             class="w-full px-3.5 py-2.5 border border-slate-300 rounded-xl text-sm leading-relaxed focus:ring-2 focus:ring-teal-600 focus:outline-none"
-            placeholder="請詳細填寫交班事項、注意事項或待辦進度..."></textarea>
+            placeholder="請詳細填寫交班事項、注意事項或待辦進度（可直接按 Ctrl+V 貼上截圖）..."></textarea>
         </div>
 
         <div>
-          <label class="block text-xs font-bold text-slate-700 mb-1">圖片或文件附件（支援圖片、Word、PDF、Excel 多檔上傳）</label>
+          <div class="flex flex-wrap items-center justify-between gap-1 mb-1">
+            <label class="block text-xs font-bold text-slate-700">圖片或文件附件（支援 Ctrl+V 直接貼上截圖或選檔）</label>
+            <span class="px-2 py-0.5 rounded-md bg-teal-50 text-teal-700 border border-teal-200 text-[11px] font-bold">
+              <i class="fa-regular fa-paste mr-1"></i>支援 Ctrl+V 貼圖
+            </span>
+          </div>
           <input type="file" id="genFileInput" multiple accept="image/*,.pdf,.doc,.docx,.xls,.xlsx,.csv,.txt" onchange="handleFileSelect(event, 'general')"
             class="w-full text-xs text-slate-500 file:mr-3 file:py-2 file:px-4 file:rounded-xl file:border-0 file:bg-teal-50 file:text-teal-700 file:font-bold hover:file:bg-teal-100 cursor-pointer">
-          <p class="text-[11px] text-slate-400 mt-1">圖片將自動壓縮；文件檔案（Word / PDF / Excel）上限 10MB，將自動歸檔至雲端分類資料夾</p>
+          <p class="text-[11px] text-slate-400 mt-1">截圖可直接按 Ctrl+V 貼上；文件檔案（Word / PDF / Excel）上限 10MB</p>
           <div id="genImagePreview" class="flex flex-wrap gap-2.5 mt-3"></div>
         </div>
       </div>
@@ -333,7 +360,6 @@
 
       <div class="p-6 space-y-4 overflow-y-auto flex-1">
         <input type="hidden" id="arrRowIndex">
-        <!-- 大類別與子類別雙層選擇 -->
         <div class="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
           <div>
             <label class="block text-xs font-bold text-slate-700 mb-1">大類別 <span class="text-rose-500">*</span></label>
@@ -352,7 +378,6 @@
           </div>
         </div>
 
-        <!-- 原支付方式（欠費與行政業務自動隱藏；選擇信用卡時於後方顯示末4碼欄位） -->
         <div id="payMethodGroup" class="hidden space-y-1.5">
           <label class="block text-xs font-bold text-slate-700">原支付方式 <span class="text-rose-500">*</span></label>
           <div class="flex flex-col sm:flex-row gap-2">
@@ -383,7 +408,7 @@
           </div>
           <div>
             <label class="block text-xs font-bold text-slate-700 mb-1">病人姓名 <span class="text-rose-500">*</span></label>
-            <input type="text" id="arrPatientName" placeholder="例如：王大明"
+            <input type="text" id="arrPatientName" placeholder="例如：王O明"
               class="w-full px-3 py-2 border border-slate-300 rounded-xl text-sm focus:ring-2 focus:ring-teal-600 focus:outline-none">
           </div>
         </div>
@@ -401,7 +426,6 @@
           </div>
         </div>
 
-        <!-- 金額與部分沖銷扣款欄位 -->
         <div class="grid grid-cols-1 sm:grid-cols-2 gap-3.5 bg-slate-50 p-3.5 rounded-xl border border-slate-200">
           <div>
             <label id="arrAmountLabel" class="block text-xs font-bold text-slate-700 mb-1">待處理／剩餘金額 ($) <span class="text-rose-500">*</span></label>
@@ -423,10 +447,9 @@
           <label class="block text-xs font-bold text-slate-700 mb-1">欠費／追蹤說明與進度 <span class="text-rose-500">*</span></label>
           <textarea id="arrContent" rows="4"
             class="w-full px-3.5 py-2.5 border border-slate-300 rounded-xl text-sm leading-relaxed focus:ring-2 focus:ring-teal-600 focus:outline-none"
-            placeholder="請詳細說明原因、聯絡電話、約定繳款/退費日期與處理進度..."></textarea>
+            placeholder="請詳細說明原因、約定繳款/退費日期與處理進度（可直接按 Ctrl+V 貼上截圖）..."></textarea>
         </div>
 
-        <!-- 主管專用註記（僅 isSupervisor === true 顯示） -->
         <div id="supervisorNoteGroup" class="hidden bg-amber-50 border border-amber-300 p-3.5 rounded-xl">
           <label class="block text-xs font-bold text-amber-900 mb-1">
             <i class="fa-solid fa-crown text-amber-600 mr-1"></i>主管專用註記（僅主管權限可新增與編輯）
@@ -437,10 +460,15 @@
         </div>
 
         <div>
-          <label class="block text-xs font-bold text-slate-700 mb-1">圖片或文件附件（支援圖片、Word、PDF、Excel 多檔上傳）</label>
+          <div class="flex flex-wrap items-center justify-between gap-1 mb-1">
+            <label class="block text-xs font-bold text-slate-700">圖片或文件附件（支援 Ctrl+V 直接貼上截圖或選檔）</label>
+            <span class="px-2 py-0.5 rounded-md bg-teal-50 text-teal-700 border border-teal-200 text-[11px] font-bold">
+              <i class="fa-regular fa-paste mr-1"></i>支援 Ctrl+V 貼圖
+            </span>
+          </div>
           <input type="file" id="arrFileInput" multiple accept="image/*,.pdf,.doc,.docx,.xls,.xlsx,.csv,.txt" onchange="handleFileSelect(event, 'arrears')"
             class="w-full text-xs text-slate-500 file:mr-3 file:py-2 file:px-4 file:rounded-xl file:border-0 file:bg-teal-50 file:text-teal-700 file:font-bold hover:file:bg-teal-100 cursor-pointer">
-          <p class="text-[11px] text-slate-400 mt-1">圖片將自動壓縮；文件檔案（Word / PDF / Excel）上限 10MB，將自動歸檔至雲端分類資料夾</p>
+          <p class="text-[11px] text-slate-400 mt-1">截圖可直接按 Ctrl+V 貼上；文件檔案（Word / PDF / Excel）上限 10MB</p>
           <div id="arrImagePreview" class="flex flex-wrap gap-2.5 mt-3"></div>
         </div>
       </div>
@@ -483,6 +511,57 @@
     </div>
   </div>
 
+  <!-- ==================== 5.5 催款電話／催繳信快速紀錄 Modal ==================== -->
+  <div id="collectionModal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-40 hidden flex items-center justify-center p-4">
+    <div class="bg-white rounded-2xl shadow-2xl w-full max-w-md overflow-hidden">
+      <div id="collectionModalHeader" class="px-6 py-4 bg-indigo-700 text-white flex justify-between items-center">
+        <h3 id="collectionModalTitle" class="font-bold text-base flex items-center gap-2">
+          <i class="fa-solid fa-phone-volume"></i>
+          <span>紀錄催款電話</span>
+        </h3>
+        <button onclick="closeModals()" class="text-white/80 hover:text-white p-1 cursor-pointer">
+          <i class="fa-solid fa-xmark text-lg"></i>
+        </button>
+      </div>
+      <div class="p-6 space-y-4">
+        <input type="hidden" id="colRowIndex">
+        <input type="hidden" id="colType">
+        <div id="colTargetInfo" class="p-3 rounded-xl bg-slate-50 border border-slate-200 text-xs font-bold text-slate-700 leading-relaxed"></div>
+
+        <div>
+          <label class="block text-xs font-bold text-slate-700 mb-1">執行日期 <span class="text-rose-500">*</span></label>
+          <input type="date" id="colDateInput"
+            class="w-full px-3.5 py-2 border border-slate-300 rounded-xl text-sm focus:ring-2 focus:ring-indigo-600 focus:outline-none">
+        </div>
+
+        <div>
+          <div class="flex items-center justify-between mb-1.5">
+            <label class="block text-xs font-bold text-slate-700">處理結果快選 <span class="text-rose-500">*</span></label>
+            <button type="button" id="quickEditOutcomesBtn" onclick="jumpToOutcomeManager()"
+              class="hidden text-[11px] font-bold text-amber-700 hover:text-amber-900 flex items-center gap-1 cursor-pointer">
+              <i class="fa-solid fa-pen-to-square"></i>
+              <span>主管增修快選選項</span>
+            </button>
+          </div>
+          <select id="colOutcomeSelect"
+            class="w-full px-3.5 py-2.5 border border-slate-300 rounded-xl text-sm font-semibold bg-white focus:ring-2 focus:ring-indigo-600 focus:outline-none cursor-pointer">
+          </select>
+        </div>
+
+        <div>
+          <label class="block text-xs font-bold text-slate-700 mb-1">補充說明備註（選填）</label>
+          <input type="text" id="colNoteInput" placeholder="例如：約定 11/25 回診繳清 / 掛號號碼..."
+            onkeydown="if(event.key==='Enter') submitCollectionLog()"
+            class="w-full px-3.5 py-2 border border-slate-300 rounded-xl text-sm focus:ring-2 focus:ring-indigo-600 focus:outline-none">
+        </div>
+      </div>
+      <div class="px-6 py-3.5 bg-slate-50 border-t border-slate-200 flex justify-end gap-2">
+        <button onclick="closeModals()" class="px-4 py-2 border border-slate-300 rounded-xl text-sm font-semibold text-slate-600 hover:bg-slate-100 transition cursor-pointer">取消</button>
+        <button id="colSubmitBtn" onclick="submitCollectionLog()" class="px-5 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl text-sm font-bold shadow-sm transition cursor-pointer">儲存催繳紀錄</button>
+      </div>
+    </div>
+  </div>
+
   <!-- ==================== 6. 圖片燈箱預覽 Modal ==================== -->
   <div id="lightboxModal" onclick="closeLightbox(event)" class="fixed inset-0 bg-slate-950/90 z-50 hidden flex items-center justify-center p-4">
     <button onclick="closeLightbox(event, true)" class="absolute top-4 right-4 text-white/80 hover:text-white bg-white/10 hover:bg-white/20 w-10 h-10 rounded-full flex items-center justify-center transition cursor-pointer">
@@ -491,13 +570,13 @@
     <img id="lightboxImg" src="" alt="附件預覽" class="max-w-full max-h-[90vh] rounded-xl shadow-2xl object-contain">
   </div>
 
-  <!-- ==================== 7. 主管專用：子類別管理 Modal ==================== -->
+  <!-- ==================== 7. 主管專用：子類別與催繳快選管理 Modal ==================== -->
   <div id="categoryManagerModal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
-    <div class="bg-white rounded-2xl shadow-2xl w-full max-w-md overflow-hidden flex flex-col max-h-[90vh]">
+    <div class="bg-white rounded-2xl shadow-2xl w-full max-w-lg overflow-hidden flex flex-col max-h-[92vh]">
       <div class="px-6 py-4 bg-amber-600 text-white flex justify-between items-center">
         <h3 class="font-bold text-base flex items-center gap-2">
-          <i class="fa-solid fa-tags"></i>
-          <span>管理子類別（主管權限）</span>
+          <i class="fa-solid fa-sliders"></i>
+          <span>管理子類別與催繳快選（主管權限）</span>
         </h3>
         <button onclick="closeCategoryManager()" class="text-amber-100 hover:text-white p-1 cursor-pointer">
           <i class="fa-solid fa-xmark text-lg"></i>
@@ -505,35 +584,37 @@
       </div>
 
       <div class="p-6 space-y-4 overflow-y-auto flex-1">
-        <!-- 選擇要管理的大類別分頁 -->
-        <div class="flex bg-slate-100 p-1 rounded-xl border border-slate-200">
-          <button type="button" onclick="setMgrMainCat('欠費')" id="mgrTabArrears"
-            class="flex-1 py-1.5 rounded-lg text-xs font-bold bg-white text-rose-700 shadow-xs transition cursor-pointer">🔴 欠費</button>
-          <button type="button" onclick="setMgrMainCat('退費')" id="mgrTabRefund"
-            class="flex-1 py-1.5 rounded-lg text-xs font-bold text-slate-600 hover:text-slate-900 transition cursor-pointer">🔵 退費</button>
-          <button type="button" onclick="setMgrMainCat('行政業務')" id="mgrTabAdmin"
-            class="flex-1 py-1.5 rounded-lg text-xs font-bold text-slate-600 hover:text-slate-900 transition cursor-pointer">🟢 行政業務</button>
+        <!-- 5 分頁切換：3 個子類別 + 2 個催繳結果快選 -->
+        <div class="grid grid-cols-3 sm:grid-cols-5 gap-1 bg-slate-100 p-1 rounded-xl border border-slate-200">
+          <button type="button" onclick="setMgrTab('欠費')" id="mgrTabArrears"
+            class="py-1.5 px-2 rounded-lg text-xs font-bold bg-white text-rose-700 shadow-xs transition cursor-pointer">🔴 欠費</button>
+          <button type="button" onclick="setMgrTab('退費')" id="mgrTabRefund"
+            class="py-1.5 px-2 rounded-lg text-xs font-bold text-slate-600 hover:text-slate-900 transition cursor-pointer">🔵 退費</button>
+          <button type="button" onclick="setMgrTab('行政業務')" id="mgrTabAdmin"
+            class="py-1.5 px-2 rounded-lg text-xs font-bold text-slate-600 hover:text-slate-900 transition cursor-pointer">🟢 行政</button>
+          <button type="button" onclick="setMgrTab('CALL_OUTCOMES')" id="mgrTabCall"
+            class="py-1.5 px-2 rounded-lg text-xs font-bold text-slate-600 hover:text-slate-900 transition cursor-pointer">📞 電話快選</button>
+          <button type="button" onclick="setMgrTab('LETTER_OUTCOMES')" id="mgrTabLetter"
+            class="py-1.5 px-2 rounded-lg text-xs font-bold text-slate-600 hover:text-slate-900 transition cursor-pointer">✉️ 信件快選</button>
         </div>
 
-        <!-- 新增子類別表單 -->
         <div class="bg-amber-50/70 border border-amber-200 rounded-xl p-3.5 space-y-2.5">
-          <div class="text-xs font-bold text-amber-900">在「<span id="mgrCurrentMainLabel">欠費</span>」下新增子類別</div>
+          <div class="text-xs font-bold text-amber-900">在「<span id="mgrCurrentMainLabel">欠費</span>」新增選項</div>
           <div class="flex gap-2">
-            <input type="text" id="newSubCatName" placeholder="輸入子類別名稱（如：分期承諾）"
-              onkeydown="if(event.key==='Enter'){event.preventDefault();addCustomSubCategory();}"
+            <input type="text" id="newSubCatName" placeholder="輸入新增名稱..."
+              onkeydown="if(event.key==='Enter'){event.preventDefault();addCustomManagerItem();}"
               class="flex-1 px-3 py-2 border border-amber-300 bg-white rounded-xl text-xs font-semibold focus:outline-none focus:ring-2 focus:ring-amber-500">
-            <button type="button" onclick="addCustomSubCategory()"
+            <button type="button" onclick="addCustomManagerItem()"
               class="px-3.5 py-2 bg-amber-600 hover:bg-amber-700 text-white rounded-xl text-xs font-bold shadow-sm transition shrink-0 cursor-pointer">
               <i class="fa-solid fa-plus mr-1"></i>新增
             </button>
           </div>
         </div>
 
-        <!-- 現有子類別清單 -->
         <div>
           <div class="flex items-center justify-between mb-2">
-            <span class="text-xs font-bold text-slate-700">目前子類別清單</span>
-            <button type="button" onclick="resetDefaultSubCategories()" class="text-[11px] text-slate-400 hover:text-rose-600 underline cursor-pointer">恢復預設清單</button>
+            <span class="text-xs font-bold text-slate-700">目前選項清單（點擊右側鉛筆可修改文字）</span>
+            <button type="button" onclick="resetCurrentManagerDefaults()" class="text-[11px] text-slate-400 hover:text-rose-600 underline cursor-pointer">恢復預設清單</button>
           </div>
           <ul id="categoryManagerList" class="space-y-2"></ul>
         </div>
@@ -551,28 +632,58 @@
   <script>
     const API_URL = 'https://script.google.com/macros/s/AKfycby8IcYXLzr-L_1OrPhTHT9X9L4CQ8kXMdpp5Q9iO4hQe-a3cdIwTqc81_lluH2LRNGmXw/exec';
 
-    // 系統全域狀態
     let currentPwd = '';
+    let currentPass = '';
     let currentStaff = { id: '', name: '', isSupervisor: false };
     let generalData = [];
     let arrearsData = [];
     let activeTab = 'general';
     let arrearsStatusFilter = '未結案';
     let arrearsMainCatFilter = 'ALL';
+    let arrearsCollectionFilter = 'ALL';
 
-    // Modal 暫存圖片狀態
     let existingImageUrls = [];
-    let newCompressedImages = []; // [{ base64, name, isDoc }]
+    let newCompressedImages = [];
     let editingOriginalAmount = 0;
 
-    // 大類別與子類別階層設定（主管可隨時增刪各主類別下的子類別）
     const SUBCATEGORY_STORAGE_KEY = 'tungs_cashier_subcategories_v2';
     const DEFAULT_SUBCATEGORIES = {
       '欠費': ['允諾欠款', '帳務稽核(EIP或手工單)', '繳費機相關', '其他欠費'],
       '退費': ['溢繳/重複繳費退費', '帳務稽核(EIP或手工單)', '繳費機相關', '其他退費'],
       '行政業務': ['出生證明/英文收據', '診斷書/病歷複製', '帳務稽核(EIP或手工單)', '繳費機相關', '其他行政交班']
     };
-    let managerActiveMainCat = '欠費';
+
+    const COLLECTION_OUTCOMES_STORAGE_KEY = 'tungs_cashier_collection_outcomes_v1';
+    const DEFAULT_COLLECTION_OUTCOMES = {
+      call: [
+        '✅ 已接通，病人／家屬承諾近期繳款',
+        '📵 未接聽／轉語音信箱',
+        '❌ 電話空號／停話／非本人',
+        '💬 家屬代接，轉達通知中',
+        '🏥 轉介社工／法務協商中'
+      ],
+      letter: [
+        '✉️ 已寄出催繳信（平信／掛號）',
+        '⚠️ 查無此人／招領逾期退件',
+        '⏸️ 暫不寄信（PASS／協商分期中）',
+        '📮 已補寄第二波催繳信'
+      ]
+    };
+
+    let managerActiveTab = '欠費';
+    let managerEditingIndex = -1;
+
+    function togglePassVisibility(inputId, btn) {
+      const input = document.getElementById(inputId);
+      const icon = btn.querySelector('i');
+      if (input.type === 'password') {
+        input.type = 'text';
+        icon.className = 'fa-regular fa-eye-slash text-sm';
+      } else {
+        input.type = 'password';
+        icon.className = 'fa-regular fa-eye text-sm';
+      }
+    }
 
     function getSubCategoryMap() {
       try {
@@ -600,7 +711,47 @@
       populateSubCategoryDropdown();
     }
 
-    // 解析資料庫中的類別字串（支援 "大類別 - 子類別" 以及舊資料相容）
+    function getCollectionOutcomesMap() {
+      try {
+        const saved = localStorage.getItem(COLLECTION_OUTCOMES_STORAGE_KEY);
+        if (saved) {
+          const parsed = JSON.parse(saved);
+          if (parsed && typeof parsed === 'object') {
+            return {
+              call: Array.isArray(parsed.call) && parsed.call.length ? parsed.call : [...DEFAULT_COLLECTION_OUTCOMES.call],
+              letter: Array.isArray(parsed.letter) && parsed.letter.length ? parsed.letter : [...DEFAULT_COLLECTION_OUTCOMES.letter]
+            };
+          }
+        }
+      } catch (e) {}
+      return {
+        call: [...DEFAULT_COLLECTION_OUTCOMES.call],
+        letter: [...DEFAULT_COLLECTION_OUTCOMES.letter]
+      };
+    }
+
+    function saveCollectionOutcomesMap(map) {
+      localStorage.setItem(COLLECTION_OUTCOMES_STORAGE_KEY, JSON.stringify(map));
+      if (!document.getElementById('collectionModal').classList.contains('hidden')) {
+        const currentType = document.getElementById('colType').value || 'call';
+        populateCollectionOutcomeSelect(currentType);
+      }
+    }
+
+    function populateCollectionOutcomeSelect(type) {
+      const select = document.getElementById('colOutcomeSelect');
+      if (!select) return;
+      const map = getCollectionOutcomesMap();
+      const optionsList = type === 'letter' ? map.letter : map.call;
+      select.innerHTML = '';
+      optionsList.forEach(optText => {
+        const opt = document.createElement('option');
+        opt.value = optText;
+        opt.textContent = optText;
+        select.appendChild(opt);
+      });
+    }
+
     function parseCategoryField(rawCat) {
       const str = String(rawCat || '欠費').trim();
       if (str.includes(' - ')) {
@@ -643,9 +794,42 @@
     document.addEventListener('DOMContentLoaded', () => {
       initFontScale();
       populateSubCategoryDropdown();
+      initClipboardPasteListener();
     });
 
-    // ==================== 字體大小切換（小 / 標準 / 大） ====================
+    // ==================== 剪貼簿直接貼上截圖 (Ctrl+V / Cmd+V) ====================
+    function initClipboardPasteListener() {
+      document.addEventListener('paste', async (event) => {
+        const genModalOpen = !document.getElementById('generalModal').classList.contains('hidden');
+        const arrModalOpen = !document.getElementById('arrearsModal').classList.contains('hidden');
+        if (!genModalOpen && !arrModalOpen) return;
+
+        const items = Array.from((event.clipboardData || window.clipboardData)?.items || []);
+        const imageItems = items.filter(item => item.type && item.type.startsWith('image/'));
+        if (imageItems.length === 0) return;
+
+        event.preventDefault();
+        const target = genModalOpen ? 'general' : 'arrears';
+
+        for (const item of imageItems) {
+          const blob = item.getAsFile();
+          if (!blob) continue;
+          try {
+            const compressedBase64 = await compressImage(blob, 1200, 0.75);
+            newCompressedImages.push({
+              base64: compressedBase64,
+              name: `clipboard_${Date.now()}.jpg`,
+              isDoc: false
+            });
+          } catch (err) {
+            showToast('剪貼簿圖片處理失敗', 'error');
+          }
+        }
+        renderModalPreviews(target);
+        showToast(`已從剪貼簿貼上 ${imageItems.length} 張截圖`, 'success');
+      });
+    }
+
     const FONT_SCALE_STORAGE_KEY = 'tungs_cashier_font_scale_v1';
 
     function initFontScale() {
@@ -673,7 +857,6 @@
       }
     }
 
-    // ==================== 工具函式 ====================
     function getTodayISO() {
       const now = new Date();
       const tw = new Date(now.toLocaleString('en-US', { timeZone: 'Asia/Taipei' }));
@@ -736,19 +919,12 @@
 
     function getDocIconMeta(fileName) {
       const lower = String(fileName || '').toLowerCase();
-      if (lower.endsWith('.pdf')) {
-        return { icon: 'fa-file-pdf', color: 'text-rose-600 bg-rose-50 border-rose-200', badge: 'PDF' };
-      }
-      if (lower.endsWith('.doc') || lower.endsWith('.docx')) {
-        return { icon: 'fa-file-word', color: 'text-blue-600 bg-blue-50 border-blue-200', badge: 'WORD' };
-      }
-      if (lower.endsWith('.xls') || lower.endsWith('.xlsx') || lower.endsWith('.csv')) {
-        return { icon: 'fa-file-excel', color: 'text-emerald-600 bg-emerald-50 border-emerald-200', badge: 'EXCEL' };
-      }
+      if (lower.endsWith('.pdf')) return { icon: 'fa-file-pdf', color: 'text-rose-600 bg-rose-50 border-rose-200', badge: 'PDF' };
+      if (lower.endsWith('.doc') || lower.endsWith('.docx')) return { icon: 'fa-file-word', color: 'text-blue-600 bg-blue-50 border-blue-200', badge: 'WORD' };
+      if (lower.endsWith('.xls') || lower.endsWith('.xlsx') || lower.endsWith('.csv')) return { icon: 'fa-file-excel', color: 'text-emerald-600 bg-emerald-50 border-emerald-200', badge: 'EXCEL' };
       return { icon: 'fa-file-lines', color: 'text-slate-600 bg-slate-100 border-slate-200', badge: 'FILE' };
     }
 
-    // 將 Google Drive 檢視網址自動轉為直接下載網址（免開網頁預覽）
     function getDirectDownloadUrl(rawUrl) {
       const str = String(rawUrl || '').trim();
       const match = str.match(/\/file\/d\/([a-zA-Z0-9_-]+)/) || str.match(/[?&]id=([a-zA-Z0-9_-]+)/);
@@ -758,7 +934,6 @@
       return str;
     }
 
-    // 透過隱藏 iframe 觸發背景直接下載，完全不跳轉也不開啟雲端網頁
     function triggerSilentDownload(event, rawUrl, fileName) {
       if (event) event.preventDefault();
       const downloadUrl = getDirectDownloadUrl(rawUrl);
@@ -827,10 +1002,16 @@
       }, 3200);
     }
 
-    // ==================== 登入驗證與資料讀取 ====================
+    // ==================== 雙重登入驗證 ====================
     async function handleLogin() {
       const staffId = document.getElementById('staffIdInput').value.trim();
-      if (!staffId) return;
+      const deptPass = document.getElementById('deptPassInput').value.trim();
+      if (!staffId || !deptPass) {
+        const errBox = document.getElementById('loginError');
+        document.getElementById('loginErrorText').textContent = '請輸入員工代號及單位指定密碼';
+        errBox.classList.remove('hidden');
+        return;
+      }
 
       const btn = document.getElementById('loginBtn');
       const errBox = document.getElementById('loginError');
@@ -841,11 +1022,12 @@
       btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i><span>驗證中...</span>';
 
       try {
-        const res = await fetch(`${API_URL}?pwd=${encodeURIComponent(staffId)}&_t=${Date.now()}`);
+        const res = await fetch(`${API_URL}?pwd=${encodeURIComponent(staffId)}&pass=${encodeURIComponent(deptPass)}&_t=${Date.now()}`);
         const json = await res.json();
 
         if (json.status === 'success') {
           currentPwd = staffId;
+          currentPass = deptPass;
           currentStaff = {
             id: (json.staff && json.staff.id) || staffId,
             name: (json.staff && json.staff.name) || '',
@@ -854,7 +1036,6 @@
           generalData = Array.isArray(json.data) ? json.data : [];
           arrearsData = Array.isArray(json.arrearsData) ? json.arrearsData : [];
 
-          // 更新頂部使用者資訊
           document.getElementById('userInfoDisplay').textContent = currentStaff.name
             ? `${currentStaff.name} (${currentStaff.id})`
             : currentStaff.id;
@@ -876,7 +1057,7 @@
           renderCurrentTab();
           showToast(`歡迎回來，${currentStaff.name || currentStaff.id}`, 'success');
         } else {
-          errText.textContent = json.message || '無效的員工代號，或尚未開通權限';
+          errText.textContent = json.message || '員工代號或單位指定密碼錯誤';
           errBox.classList.remove('hidden');
         }
       } catch (err) {
@@ -889,11 +1070,11 @@
     }
 
     async function fetchAllData(notify = false) {
-      if (!currentPwd) return;
+      if (!currentPwd || !currentPass) return;
       const icon = document.getElementById('refreshIcon');
       icon.classList.add('fa-spin');
       try {
-        const res = await fetch(`${API_URL}?pwd=${encodeURIComponent(currentPwd)}&_t=${Date.now()}`);
+        const res = await fetch(`${API_URL}?pwd=${encodeURIComponent(currentPwd)}&pass=${encodeURIComponent(currentPass)}&_t=${Date.now()}`);
         const json = await res.json();
         if (json.status === 'success') {
           generalData = Array.isArray(json.data) ? json.data : [];
@@ -911,10 +1092,12 @@
 
     function handleLogout() {
       currentPwd = '';
+      currentPass = '';
       currentStaff = { id: '', name: '', isSupervisor: false };
       generalData = [];
       arrearsData = [];
       document.getElementById('staffIdInput').value = '';
+      document.getElementById('deptPassInput').value = '';
       document.getElementById('mainView').classList.add('hidden');
       document.getElementById('loginView').classList.remove('hidden');
     }
@@ -925,13 +1108,13 @@
       document.getElementById('countArrearsBadge').textContent = unresolvedCount;
     }
 
-    // ==================== 分頁與篩選控制 ====================
     function switchTab(tab) {
       activeTab = tab;
       const tabGen = document.getElementById('tabGeneral');
       const tabArr = document.getElementById('tabArrears');
       const statusWrap = document.getElementById('statusFilterWrapper');
       const mainCatBar = document.getElementById('mainCatFilterBar');
+      const colFilterBar = document.getElementById('collectionFilterBar');
       const addBtnText = document.getElementById('addBtnText');
 
       if (tab === 'general') {
@@ -939,14 +1122,30 @@
         tabArr.className = 'py-3 px-2 text-sm font-bold border-b-2 border-transparent text-slate-500 hover:text-slate-800 flex items-center gap-2 transition cursor-pointer';
         statusWrap.classList.add('hidden');
         mainCatBar.classList.add('hidden');
+        colFilterBar.classList.add('hidden');
         addBtnText.textContent = '新增一般交班';
       } else {
         tabArr.className = 'py-3 px-2 text-sm font-bold border-b-2 border-teal-700 text-teal-800 flex items-center gap-2 transition cursor-pointer';
         tabGen.className = 'py-3 px-2 text-sm font-bold border-b-2 border-transparent text-slate-500 hover:text-slate-800 flex items-center gap-2 transition cursor-pointer';
         statusWrap.classList.remove('hidden');
         mainCatBar.classList.remove('hidden');
+        colFilterBar.classList.remove('hidden');
         addBtnText.textContent = '新增費用／行政交班';
       }
+      renderCurrentTab();
+    }
+
+    function setArrearsFilter(status) {
+      arrearsStatusFilter = status;
+      const map = { '未結案': 'filterUnresolved', '已結清': 'filterResolved', '全部': 'filterAll' };
+      Object.entries(map).forEach(([k, id]) => {
+        const el = document.getElementById(id);
+        if (el) {
+          el.className = (k === status)
+            ? 'px-3 py-1.5 rounded-lg text-xs font-bold bg-white text-teal-800 shadow-sm transition cursor-pointer'
+            : 'px-3 py-1.5 rounded-lg text-xs font-bold text-slate-600 hover:text-slate-900 transition cursor-pointer';
+        }
+      });
       renderCurrentTab();
     }
 
@@ -963,6 +1162,48 @@
         if (el) el.className = (key === cat) ? cfg.active : cfg.inactive;
       });
       renderCurrentTab();
+    }
+
+    function setCollectionFilter(filterKey) {
+      arrearsCollectionFilter = filterKey;
+      const styles = {
+        ALL: { id: 'colFilterAll', active: 'px-3 py-1 rounded-full text-xs font-bold bg-teal-700 text-white shadow-2xs transition cursor-pointer', inactive: 'px-3 py-1 rounded-full text-xs font-bold bg-white text-slate-600 border border-slate-200 hover:bg-slate-50 transition cursor-pointer' },
+        NONE: { id: 'colFilterNone', active: 'px-3 py-1 rounded-full text-xs font-bold bg-amber-600 text-white shadow-2xs transition cursor-pointer', inactive: 'px-3 py-1 rounded-full text-xs font-bold bg-amber-50 text-amber-800 border border-amber-200 hover:bg-amber-100 transition cursor-pointer' },
+        CALLED: { id: 'colFilterCalled', active: 'px-3 py-1 rounded-full text-xs font-bold bg-indigo-600 text-white shadow-2xs transition cursor-pointer', inactive: 'px-3 py-1 rounded-full text-xs font-bold bg-indigo-50 text-indigo-700 border border-indigo-200 hover:bg-indigo-100 transition cursor-pointer' },
+        LETTER: { id: 'colFilterLetter', active: 'px-3 py-1 rounded-full text-xs font-bold bg-purple-600 text-white shadow-2xs transition cursor-pointer', inactive: 'px-3 py-1 rounded-full text-xs font-bold bg-purple-50 text-purple-700 border border-purple-200 hover:bg-purple-100 transition cursor-pointer' }
+      };
+      Object.entries(styles).forEach(([key, cfg]) => {
+        const el = document.getElementById(cfg.id);
+        if (el) el.className = (key === filterKey) ? cfg.active : cfg.inactive;
+      });
+      renderCurrentTab();
+    }
+
+    // 解析個案的催款電話與催繳信紀錄（相容新版紀錄與 185 筆舊資料關鍵字）
+    function analyzeCollectionStatus(row) {
+      const explicitLog = String(row['催繳紀錄'] || '').trim();
+      const desc = String(row['欠費說明與進度'] || '').trim();
+      const history = String(row['異動歷程'] || '').trim();
+      const combined = `${explicitLog}\n${desc}\n${history}`;
+
+      let callCount = 0;
+      let letterCount = 0;
+
+      const explicitCallMatches = combined.match(/📞【催款電話/g);
+      if (explicitCallMatches) callCount += explicitCallMatches.length;
+
+      const explicitLetterMatches = combined.match(/✉️【催繳信/g);
+      if (explicitLetterMatches) letterCount += explicitLetterMatches.length;
+
+      if (callCount === 0 && /(打PT|打給|去電|電PT|致電|電聯|手機|未接|轉語音|打兒子|打太太|打家屬|聯絡pt|聯絡病人|催款電話)/i.test(desc)) {
+        callCount = 1;
+      }
+
+      if (letterCount === 0 && /(寄信|催繳信|存證信函|查無此人|招領逾期)/i.test(desc)) {
+        letterCount = 1;
+      }
+
+      return { callCount, letterCount };
     }
 
     function clearSearch() {
@@ -998,7 +1239,6 @@
       return true;
     }
 
-    // 解析交班日期為時間戳記以進行排序
     function getHandoverTimestamp(val) {
       if (!val) return null;
       const str = String(val).trim();
@@ -1009,7 +1249,6 @@
       return isNaN(fallback.getTime()) ? null : fallback.getTime();
     }
 
-    // 依交班日遠近排序資料列（同日期或無日期時依 rowIndex 順序平滑回退）
     function sortByHandoverDate(list, order) {
       const isAsc = order === 'asc';
       return [...list].sort((a, b) => {
@@ -1028,7 +1267,6 @@
       });
     }
 
-    // ==================== 列表渲染（完整保留類別色彩標示） ====================
     function getFilteredGeneralList() {
       const kw = document.getElementById('searchInput').value.trim().toLowerCase();
       const sortOrder = document.getElementById('dateSortOrder') ? document.getElementById('dateSortOrder').value : 'desc';
@@ -1046,13 +1284,17 @@
         const status = String(r['狀態'] || '未結案').trim();
         if (arrearsStatusFilter === '未結案' && status === '已結清') return false;
         if (arrearsStatusFilter === '已結清' && status !== '已結清') return false;
-
         if (!isWithinDateRange(r['交班日期'])) return false;
 
         const parsedCat = parseCategoryField(r['追蹤類別']);
         if (arrearsMainCatFilter !== 'ALL' && parsedCat.main !== arrearsMainCatFilter) return false;
 
-        const text = `${r['編號'] || ''} ${parsedCat.main} ${parsedCat.sub} ${r['原支付方式'] || ''} ${r['病歷號'] || ''} ${r['病人姓名'] || ''} ${r['欠費說明與進度'] || ''} ${r['交班人'] || ''} ${r['主管專用註記'] || ''}`.toLowerCase();
+        const colInfo = analyzeCollectionStatus(r);
+        if (arrearsCollectionFilter === 'NONE' && (colInfo.callCount > 0 || colInfo.letterCount > 0)) return false;
+        if (arrearsCollectionFilter === 'CALLED' && colInfo.callCount === 0) return false;
+        if (arrearsCollectionFilter === 'LETTER' && colInfo.letterCount === 0) return false;
+
+        const text = `${r['編號'] || ''} ${parsedCat.main} ${parsedCat.sub} ${r['原支付方式'] || ''} ${r['病歷號'] || ''} ${r['病人姓名'] || ''} ${r['欠費說明與進度'] || ''} ${r['交班人'] || ''} ${r['主管專用註記'] || ''} ${r['催繳紀錄'] || ''}`.toLowerCase();
         return text.includes(kw);
       }), sortOrder);
     }
@@ -1170,12 +1412,27 @@
         const style = getCategoryStyle(parsedCat.main);
         const imgGrid = renderAttachmentsBlock(r['圖片']);
         const historyLines = String(r['異動歷程'] || '').split('\n').map(s => s.trim()).filter(Boolean);
+        const colInfo = analyzeCollectionStatus(r);
 
-        // 第 1 項優化：若原支付方式為「免」或空值，不顯示支付方式徽章
         const showPayBadge = payMethod && payMethod !== '免';
         const payBadgeHtml = showPayBadge
           ? `<span class="px-2.5 py-0.5 rounded-full bg-slate-100 text-slate-700 border border-slate-200 text-xs font-semibold">${escapeHtml(payMethod)}</span>`
           : '';
+
+        let collectionBadgesHtml = '';
+        if (parsedCat.main === '欠費' || colInfo.callCount > 0 || colInfo.letterCount > 0) {
+          if (colInfo.callCount > 0) {
+            const callLabel = colInfo.callCount > 1 ? `已電催 ${colInfo.callCount} 次` : '已電催';
+            collectionBadgesHtml += `<span class="px-2.5 py-0.5 rounded-full bg-indigo-50 text-indigo-700 border border-indigo-200 text-xs font-bold"><i class="fa-solid fa-phone mr-1"></i>${callLabel}</span>`;
+          }
+          if (colInfo.letterCount > 0) {
+            const letterLabel = colInfo.letterCount > 1 ? `已寄信 ${colInfo.letterCount} 次` : '已寄催繳信';
+            collectionBadgesHtml += `<span class="px-2.5 py-0.5 rounded-full bg-purple-50 text-purple-700 border border-purple-200 text-xs font-bold"><i class="fa-solid fa-envelope-open-text mr-1"></i>${letterLabel}</span>`;
+          }
+          if (!isResolved && parsedCat.main === '欠費' && colInfo.callCount === 0 && colInfo.letterCount === 0) {
+            collectionBadgesHtml += `<span class="px-2.5 py-0.5 rounded-full bg-amber-50 text-amber-700 border border-amber-200 text-xs font-semibold"><i class="fa-regular fa-bell mr-1"></i>尚未催款</span>`;
+          }
+        }
 
         const supervisorHtml = supervisorNote ? `
           <div class="mb-3 px-3.5 py-2.5 rounded-xl bg-amber-50 border border-amber-300 text-amber-950 text-xs font-bold flex items-start gap-2">
@@ -1196,41 +1453,47 @@
 
         return `
           <article class="bg-white rounded-2xl shadow-sm border ${isResolved ? 'border-emerald-200 bg-emerald-50/15' : style.border} p-4 sm:p-5 transition">
-            <!-- 卡片頂部資訊列 -->
             <div class="flex flex-wrap items-center justify-between gap-2 pb-3 mb-3 border-b border-slate-100">
               <div class="flex flex-wrap items-center gap-2">
                 <span class="px-2.5 py-0.5 rounded-full text-xs font-bold ${isResolved ? 'bg-emerald-100 text-emerald-800' : 'bg-amber-100 text-amber-800'}">
                   ${isResolved ? '已結案' : '未結案'}
                 </span>
 
-                <!-- 大類別彩色徽章 -->
                 <span class="px-2.5 py-0.5 rounded-full border text-xs font-bold ${style.badge}">
                   <i class="fa-solid ${style.icon} mr-1"></i>${escapeHtml(parsedCat.main)}
                 </span>
 
-                <!-- 子類別徽章 -->
                 ${parsedCat.sub ? `
                   <span class="px-2.5 py-0.5 rounded-full border text-xs font-semibold ${style.subBadge}">
                     ${escapeHtml(parsedCat.sub)}
                   </span>` : ''}
 
-                <!-- 支付方式徽章 (非「免」才顯示) -->
                 ${payBadgeHtml}
+                ${collectionBadgesHtml}
 
-                <!-- 病歷號與病人姓名 -->
                 <span class="font-bold text-slate-800 text-sm">
                   病歷號：${escapeHtml(r['病歷號'] || '')} ・ ${escapeHtml(r['病人姓名'] || '')}
                 </span>
 
-                <!-- 金額顯示 -->
                 <span class="px-2.5 py-0.5 rounded-lg bg-slate-100 font-extrabold text-sm ${isResolved ? 'text-slate-500 line-through' : style.amountText}">
                   $${amount.toLocaleString()}
                 </span>
               </div>
 
-              <!-- 操作按鈕區 -->
-              <div class="flex items-center gap-1.5">
+              <div class="flex flex-wrap items-center gap-1.5">
                 ${!isResolved && Number(r.rowIndex) > 1 ? `
+                  <button onclick="openCollectionModal(${Number(r.rowIndex)}, 'call')"
+                    class="px-2.5 py-1.5 rounded-xl bg-indigo-50 hover:bg-indigo-100 text-indigo-700 border border-indigo-200 text-xs font-bold transition flex items-center gap-1 cursor-pointer"
+                    title="快速紀錄催款電話">
+                    <i class="fa-solid fa-phone-volume"></i>
+                    <span>催款電話</span>
+                  </button>
+                  <button onclick="openCollectionModal(${Number(r.rowIndex)}, 'letter')"
+                    class="px-2.5 py-1.5 rounded-xl bg-purple-50 hover:bg-purple-100 text-purple-700 border border-purple-200 text-xs font-bold transition flex items-center gap-1 cursor-pointer"
+                    title="快速紀錄催繳信寄發">
+                    <i class="fa-solid fa-envelope"></i>
+                    <span>催繳信</span>
+                  </button>
                   <button onclick="openEditArrearsModal(${Number(r.rowIndex)})"
                     class="px-3 py-1.5 rounded-xl bg-slate-100 hover:bg-teal-50 text-slate-700 hover:text-teal-800 border border-slate-200 text-xs font-bold transition flex items-center gap-1.5 cursor-pointer">
                     <i class="fa-solid fa-pen-to-square"></i>
@@ -1244,19 +1507,15 @@
               </div>
             </div>
 
-            <!-- 主管專用註記 -->
             ${supervisorHtml}
 
-            <!-- 說明與進度內容 -->
             <div class="text-sm text-slate-800 whitespace-pre-line leading-relaxed break-words">${escapeHtml(r['欠費說明與進度'] || '')}</div>
 
-            <!-- 結案備註 -->
             ${isResolved && r['結案備註'] ? `
               <div class="mt-3 px-3.5 py-2 rounded-xl bg-emerald-50 border border-emerald-200 text-xs text-emerald-800 font-semibold">
                 <i class="fa-solid fa-circle-check mr-1"></i>結案紀錄：${escapeHtml(r['結案備註'])}
               </div>` : ''}
 
-            <!-- 底部建檔人與時間 -->
             <div class="mt-3 flex flex-wrap items-center justify-between gap-2 text-[11px] text-slate-400">
               <span>交班日期：${escapeHtml(formatDisplayDate(r['交班日期']))} ｜ 登錄人：${escapeHtml(r['交班人'] || '')}</span>
               <span>編號：${escapeHtml(r['編號'] || '')} ｜ 建檔：${escapeHtml(formatDateTime(r['建立時間']))}</span>
@@ -1268,11 +1527,94 @@
       }).join('');
     }
 
-    // ==================== Modal 開啟與表單互動 ====================
     function closeModals() {
       document.getElementById('generalModal').classList.add('hidden');
       document.getElementById('arrearsModal').classList.add('hidden');
       document.getElementById('resolveModal').classList.add('hidden');
+      document.getElementById('collectionModal').classList.add('hidden');
+    }
+
+    function openCollectionModal(rowIndex, type) {
+      const item = arrearsData.find(r => Number(r.rowIndex) === Number(rowIndex));
+      if (!item) return;
+
+      document.getElementById('colRowIndex').value = item.rowIndex;
+      document.getElementById('colType').value = type;
+      document.getElementById('colDateInput').value = getTodayISO();
+      document.getElementById('colNoteInput').value = '';
+      document.getElementById('colTargetInfo').textContent = `病歷號：${item['病歷號'] || ''} ・ ${item['病人姓名'] || ''}（尚欠金額：$${(Number(item['欠費金額']) || 0).toLocaleString()}）`;
+
+      const header = document.getElementById('collectionModalHeader');
+      const title = document.getElementById('collectionModalTitle');
+      const submitBtn = document.getElementById('colSubmitBtn');
+      const quickEditBtn = document.getElementById('quickEditOutcomesBtn');
+
+      quickEditBtn.classList.toggle('hidden', !currentStaff.isSupervisor);
+      populateCollectionOutcomeSelect(type);
+
+      if (type === 'letter') {
+        header.className = 'px-6 py-4 bg-purple-700 text-white flex justify-between items-center';
+        title.innerHTML = '<i class="fa-solid fa-envelope-open-text"></i><span>紀錄催繳信作業</span>';
+        submitBtn.className = 'px-5 py-2 bg-purple-600 hover:bg-purple-700 text-white rounded-xl text-sm font-bold shadow-sm transition cursor-pointer';
+      } else {
+        header.className = 'px-6 py-4 bg-indigo-700 text-white flex justify-between items-center';
+        title.innerHTML = '<i class="fa-solid fa-phone-volume"></i><span>紀錄催款電話</span>';
+        submitBtn.className = 'px-5 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl text-sm font-bold shadow-sm transition cursor-pointer';
+      }
+
+      document.getElementById('collectionModal').classList.remove('hidden');
+    }
+
+    function jumpToOutcomeManager() {
+      if (!currentStaff.isSupervisor) return;
+      const currentType = document.getElementById('colType').value || 'call';
+      openCategoryManager(currentType === 'letter' ? 'LETTER_OUTCOMES' : 'CALL_OUTCOMES');
+    }
+
+    async function submitCollectionLog() {
+      const rowIndex = Number(document.getElementById('colRowIndex').value);
+      const collectionType = document.getElementById('colType').value;
+      const actionDate = document.getElementById('colDateInput').value.replace(/-/g, '/');
+      const outcome = document.getElementById('colOutcomeSelect').value;
+      const note = document.getElementById('colNoteInput').value.trim();
+
+      if (!rowIndex || !actionDate) {
+        showToast('請確認執行日期', 'error');
+        return;
+      }
+
+      const btn = document.getElementById('colSubmitBtn');
+      btn.disabled = true;
+      btn.textContent = '紀錄中...';
+
+      try {
+        const queryParams = new URLSearchParams({
+          action: 'logCollection',
+          pwd: currentPwd,
+          pass: currentPass,
+          rowIndex: String(rowIndex),
+          collectionType,
+          actionDate,
+          outcome,
+          note,
+          _t: String(Date.now())
+        });
+
+        const res = await fetch(`${API_URL}?${queryParams.toString()}`);
+        const json = await res.json();
+        if (json.status === 'success') {
+          closeModals();
+          showToast(json.message || '催繳紀錄已儲存', 'success');
+          await fetchAllData(false);
+        } else {
+          showToast(json.message || '紀錄失敗', 'error');
+        }
+      } catch (err) {
+        showToast('連線異常，請稍後再試', 'error');
+      } finally {
+        btn.disabled = false;
+        btn.textContent = '儲存催繳紀錄';
+      }
     }
 
     function openFormModal() {
@@ -1307,7 +1649,6 @@
         document.getElementById('arrFileInput').value = '';
         editingOriginalAmount = 0;
 
-        // 主管專用註記權限控制
         document.getElementById('supervisorNoteGroup').classList.toggle('hidden', !currentStaff.isSupervisor);
         handleMainCategoryChange();
         renderModalPreviews('arrears');
@@ -1374,7 +1715,6 @@
       document.getElementById('arrearsModal').classList.remove('hidden');
     }
 
-    // 第 1 項核心優化：大類別為「欠費」或「行政業務」時隱藏「原支付方式」，僅「退費」顯示
     function handleMainCategoryChange(keepSub = false) {
       const mainCat = document.getElementById('arrMainCategory').value;
       const payGroup = document.getElementById('payMethodGroup');
@@ -1406,9 +1746,7 @@
       }
     }
 
-    function handleSubCategoryChange() {
-      // 保留擴充掛鉤，後續可依子類別微調提示
-    }
+    function handleSubCategoryChange() {}
 
     function handlePayMethodChange() {
       const mainCat = document.getElementById('arrMainCategory').value;
@@ -1426,96 +1764,192 @@
       }
     }
 
-    // ==================== 主管專用：子類別管理功能 ====================
-    function openCategoryManager() {
+    // ==================== 主管專用：子類別與催繳快選管理 ====================
+    function openCategoryManager(initialTab = '欠費') {
       if (!currentStaff.isSupervisor) return;
-      setMgrMainCat('欠費');
+      managerEditingIndex = -1;
+      setMgrTab(initialTab);
       document.getElementById('categoryManagerModal').classList.remove('hidden');
     }
 
     function closeCategoryManager() {
+      managerEditingIndex = -1;
       document.getElementById('categoryManagerModal').classList.add('hidden');
     }
 
-    function setMgrMainCat(mainCat) {
-      managerActiveMainCat = mainCat;
-      document.getElementById('mgrCurrentMainLabel').textContent = mainCat;
-      const tabs = {
-        '欠費': { id: 'mgrTabArrears', active: 'flex-1 py-1.5 rounded-lg text-xs font-bold bg-white text-rose-700 shadow-xs transition cursor-pointer' },
-        '退費': { id: 'mgrTabRefund', active: 'flex-1 py-1.5 rounded-lg text-xs font-bold bg-white text-blue-700 shadow-xs transition cursor-pointer' },
-        '行政業務': { id: 'mgrTabAdmin', active: 'flex-1 py-1.5 rounded-lg text-xs font-bold bg-white text-emerald-700 shadow-xs transition cursor-pointer' }
+    function setMgrTab(tabKey) {
+      managerActiveTab = tabKey;
+      managerEditingIndex = -1;
+
+      const labelMap = {
+        '欠費': '🔴 欠費子類別',
+        '退費': '🔵 退費子類別',
+        '行政業務': '🟢 行政業務子類別',
+        'CALL_OUTCOMES': '📞 催款電話處理結果快選',
+        'LETTER_OUTCOMES': '✉️ 催繳信處理結果快選'
       };
+      document.getElementById('mgrCurrentMainLabel').textContent = labelMap[tabKey] || tabKey;
+
+      const tabs = {
+        '欠費': { id: 'mgrTabArrears', active: 'py-1.5 px-2 rounded-lg text-xs font-bold bg-white text-rose-700 shadow-xs transition cursor-pointer' },
+        '退費': { id: 'mgrTabRefund', active: 'py-1.5 px-2 rounded-lg text-xs font-bold bg-white text-blue-700 shadow-xs transition cursor-pointer' },
+        '行政業務': { id: 'mgrTabAdmin', active: 'py-1.5 px-2 rounded-lg text-xs font-bold bg-white text-emerald-700 shadow-xs transition cursor-pointer' },
+        'CALL_OUTCOMES': { id: 'mgrTabCall', active: 'py-1.5 px-2 rounded-lg text-xs font-bold bg-white text-indigo-700 shadow-xs transition cursor-pointer' },
+        'LETTER_OUTCOMES': { id: 'mgrTabLetter', active: 'py-1.5 px-2 rounded-lg text-xs font-bold bg-white text-purple-700 shadow-xs transition cursor-pointer' }
+      };
+
       Object.entries(tabs).forEach(([key, cfg]) => {
         const el = document.getElementById(cfg.id);
-        el.className = (key === mainCat)
+        if (!el) return;
+        el.className = (key === tabKey)
           ? cfg.active
-          : 'flex-1 py-1.5 rounded-lg text-xs font-bold text-slate-600 hover:text-slate-900 transition cursor-pointer';
+          : 'py-1.5 px-2 rounded-lg text-xs font-bold text-slate-600 hover:text-slate-900 transition cursor-pointer';
       });
+
       renderCategoryManagerList();
+    }
+
+    function getActiveManagerList() {
+      if (managerActiveTab === 'CALL_OUTCOMES') return getCollectionOutcomesMap().call;
+      if (managerActiveTab === 'LETTER_OUTCOMES') return getCollectionOutcomesMap().letter;
+      return getSubCategoryMap()[managerActiveTab] || [];
+    }
+
+    function saveActiveManagerList(newList) {
+      if (managerActiveTab === 'CALL_OUTCOMES') {
+        const map = getCollectionOutcomesMap();
+        map.call = newList;
+        saveCollectionOutcomesMap(map);
+      } else if (managerActiveTab === 'LETTER_OUTCOMES') {
+        const map = getCollectionOutcomesMap();
+        map.letter = newList;
+        saveCollectionOutcomesMap(map);
+      } else {
+        const map = getSubCategoryMap();
+        map[managerActiveTab] = newList;
+        saveSubCategoryMap(map);
+      }
     }
 
     function renderCategoryManagerList() {
       const listEl = document.getElementById('categoryManagerList');
-      const map = getSubCategoryMap();
-      const subs = map[managerActiveMainCat] || [];
+      const items = getActiveManagerList();
 
-      listEl.innerHTML = subs.map((subName, idx) => `
-        <li class="flex items-center justify-between gap-2 px-3 py-2.5 rounded-xl bg-slate-50 border border-slate-200 text-xs">
-          <span class="font-bold text-slate-800 truncate">${escapeHtml(subName)}</span>
-          ${subs.length > 1
-            ? `<button type="button" onclick="deleteCustomSubCategory(${idx})" class="text-rose-500 hover:text-rose-700 px-2 py-1 rounded-lg hover:bg-rose-50 transition shrink-0 cursor-pointer" title="刪除此子類別"><i class="fa-solid fa-trash-can"></i></button>`
-            : '<span class="text-[11px] text-slate-400 shrink-0">至少保留一項</span>'}
-        </li>
-      `).join('');
+      listEl.innerHTML = items.map((itemText, idx) => {
+        if (managerEditingIndex === idx) {
+          return `
+            <li class="flex items-center gap-2 px-3 py-2 rounded-xl bg-amber-50 border border-amber-300 text-xs">
+              <input type="text" id="mgrInlineEditInput" value="${escapeHtml(itemText)}"
+                onkeydown="if(event.key==='Enter'){event.preventDefault();saveInlineManagerItem(${idx});}else if(event.key==='Escape'){cancelInlineManagerEdit();}"
+                class="flex-1 px-2.5 py-1.5 border border-amber-400 bg-white rounded-lg text-xs font-bold text-slate-800 focus:outline-none">
+              <button type="button" onclick="saveInlineManagerItem(${idx})"
+                class="px-2.5 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg font-bold shrink-0 cursor-pointer">儲存</button>
+              <button type="button" onclick="cancelInlineManagerEdit()"
+                class="px-2 py-1.5 bg-slate-200 hover:bg-slate-300 text-slate-700 rounded-lg font-bold shrink-0 cursor-pointer">取消</button>
+            </li>`;
+        }
+
+        return `
+          <li class="flex items-center justify-between gap-2 px-3 py-2.5 rounded-xl bg-slate-50 border border-slate-200 text-xs">
+            <span class="font-bold text-slate-800 break-words flex-1">${escapeHtml(itemText)}</span>
+            <div class="flex items-center gap-1 shrink-0">
+              <button type="button" onclick="startInlineManagerEdit(${idx})"
+                class="text-teal-700 hover:text-teal-900 px-2 py-1 rounded-lg hover:bg-teal-50 transition cursor-pointer" title="編輯文字">
+                <i class="fa-solid fa-pen"></i>
+              </button>
+              ${items.length > 1
+                ? `<button type="button" onclick="deleteCustomManagerItem(${idx})" class="text-rose-500 hover:text-rose-700 px-2 py-1 rounded-lg hover:bg-rose-50 transition cursor-pointer" title="刪除此項"><i class="fa-solid fa-trash-can"></i></button>`
+                : '<span class="text-[11px] text-slate-400 px-1">至少留1項</span>'}
+            </div>
+          </li>`;
+      }).join('');
+
+      if (managerEditingIndex >= 0) {
+        setTimeout(() => document.getElementById('mgrInlineEditInput')?.focus(), 50);
+      }
     }
 
-    function addCustomSubCategory() {
+    function startInlineManagerEdit(idx) {
+      managerEditingIndex = idx;
+      renderCategoryManagerList();
+    }
+
+    function cancelInlineManagerEdit() {
+      managerEditingIndex = -1;
+      renderCategoryManagerList();
+    }
+
+    function saveInlineManagerItem(idx) {
+      if (!currentStaff.isSupervisor) return;
+      const input = document.getElementById('mgrInlineEditInput');
+      const updated = (input?.value || '').trim();
+      if (!updated) {
+        showToast('選項內容不可空白', 'error');
+        return;
+      }
+      const list = [...getActiveManagerList()];
+      if (list.some((v, i) => i !== idx && v === updated)) {
+        showToast('此選項名稱已存在', 'error');
+        return;
+      }
+      list[idx] = updated;
+      saveActiveManagerList(list);
+      managerEditingIndex = -1;
+      renderCategoryManagerList();
+      showToast('已更新選項內容', 'success');
+    }
+
+    function addCustomManagerItem() {
       if (!currentStaff.isSupervisor) return;
       const input = document.getElementById('newSubCatName');
       const name = input.value.trim();
       if (!name) {
-        showToast('請輸入要新增的子類別名稱', 'error');
+        showToast('請輸入要新增的選項名稱', 'error');
         return;
       }
 
-      const map = getSubCategoryMap();
-      const list = map[managerActiveMainCat] || [];
+      const list = [...getActiveManagerList()];
       if (list.includes(name)) {
-        showToast('此子類別已存在', 'error');
+        showToast('此選項已存在', 'error');
         return;
       }
 
       list.push(name);
-      map[managerActiveMainCat] = list;
-      saveSubCategoryMap(map);
+      saveActiveManagerList(list);
       input.value = '';
       renderCategoryManagerList();
-      showToast(`已在「${managerActiveMainCat}」新增子類別「${name}」`, 'success');
+      showToast(`已新增選項「${name}」`, 'success');
     }
 
-    function deleteCustomSubCategory(index) {
+    function deleteCustomManagerItem(index) {
       if (!currentStaff.isSupervisor) return;
-      const map = getSubCategoryMap();
-      const list = map[managerActiveMainCat] || [];
+      const list = [...getActiveManagerList()];
       if (list.length <= 1) return;
 
       const removed = list.splice(index, 1)[0];
-      map[managerActiveMainCat] = list;
-      saveSubCategoryMap(map);
+      saveActiveManagerList(list);
       renderCategoryManagerList();
-      showToast(`已移除子類別「${removed}」`, 'info');
+      showToast(`已移除選項「${removed}」`, 'info');
     }
 
-    function resetDefaultSubCategories() {
+    function resetCurrentManagerDefaults() {
       if (!currentStaff.isSupervisor) return;
-      const fresh = {
-        '欠費': [...DEFAULT_SUBCATEGORIES['欠費']],
-        '退費': [...DEFAULT_SUBCATEGORIES['退費']],
-        '行政業務': [...DEFAULT_SUBCATEGORIES['行政業務']]
-      };
-      saveSubCategoryMap(fresh);
+      managerEditingIndex = -1;
+      if (managerActiveTab === 'CALL_OUTCOMES') {
+        const map = getCollectionOutcomesMap();
+        map.call = [...DEFAULT_COLLECTION_OUTCOMES.call];
+        saveCollectionOutcomesMap(map);
+      } else if (managerActiveTab === 'LETTER_OUTCOMES') {
+        const map = getCollectionOutcomesMap();
+        map.letter = [...DEFAULT_COLLECTION_OUTCOMES.letter];
+        saveCollectionOutcomesMap(map);
+      } else {
+        const map = getSubCategoryMap();
+        map[managerActiveTab] = [...DEFAULT_SUBCATEGORIES[managerActiveTab]];
+        saveSubCategoryMap(map);
+      }
       renderCategoryManagerList();
-      showToast('已恢復為預設子類別清單', 'info');
+      showToast('已恢復為預設清單', 'info');
     }
 
     function openResolveModal(rowIndex) {
@@ -1542,7 +1976,6 @@
         .replace(/'/g, '&#39;');
     }
 
-    // ==================== 圖片與文件壓縮與預覽管理 ====================
     async function handleFileSelect(event, target) {
       const files = Array.from(event.target.files || []);
       if (files.length === 0) return;
@@ -1691,7 +2124,6 @@
       }
     }
 
-    // ==================== POST 請求送出資料 ====================
     async function postToGas(payload) {
       const res = await fetch(API_URL, {
         method: 'POST',
@@ -1720,6 +2152,7 @@
         const isEdit = Boolean(rowIndex);
         const payload = isEdit ? {
           pwd: currentPwd,
+          pass: currentPass,
           action: 'edit',
           rowIndex: Number(rowIndex),
           handoverDate,
@@ -1729,6 +2162,7 @@
           newImages: newCompressedImages
         } : {
           pwd: currentPwd,
+          pass: currentPass,
           action: 'add',
           handoverDate,
           author,
@@ -1757,7 +2191,6 @@
       const mainCategory = document.getElementById('arrMainCategory').value;
       const subCategory = document.getElementById('arrSubCategory').value;
       const category = subCategory ? `${mainCategory} - ${subCategory}` : mainCategory;
-      // 第 1 項核心優化：大類別為「欠費」或「行政業務」時自動帶入 payMethod: '免'
       const rawPayMethod = document.getElementById('arrPayMethod').value;
       const cardLast4 = document.getElementById('arrCardLast4').value.trim();
       let payMethod = '免';
@@ -1790,6 +2223,7 @@
         const isEdit = Boolean(rowIndex);
         const payload = isEdit ? {
           pwd: currentPwd,
+          pass: currentPass,
           action: 'editArrears',
           rowIndex: Number(rowIndex),
           handoverDate,
@@ -1806,6 +2240,7 @@
           supervisorNote
         } : {
           pwd: currentPwd,
+          pass: currentPass,
           action: 'addArrears',
           handoverDate,
           patientId,
@@ -1847,6 +2282,7 @@
       try {
         const json = await postToGas({
           pwd: currentPwd,
+          pass: currentPass,
           action: 'resolveArrears',
           rowIndex,
           resolveNote
@@ -1866,7 +2302,6 @@
       }
     }
 
-    // ==================== 匯出 Excel CSV 報表 ====================
     function downloadCSVFile(filename, rows) {
       const csvContent = '\uFEFF' + rows.map(row =>
         row.map(cell => `"${String(cell ?? '').replace(/"/g, '""')}"`).join(',')
@@ -1908,12 +2343,18 @@
           showToast('目前篩選條件下沒有可匯出的費用／行政交班紀錄', 'error');
           return;
         }
-        const rows = [['編號', '狀態', '大類別', '子類別', '原支付方式', '病歷號', '病人姓名', '待處理金額', '交班日期', '登錄人', '主管專用註記', '說明與處理進度', '結案備註', '異動歷程', '建立時間']];
+        const rows = [['編號', '狀態', '催繳進度', '大類別', '子類別', '原支付方式', '病歷號', '病人姓名', '待處理金額', '交班日期', '登錄人', '主管專用註記', '說明與處理進度', '結案備註', '異動歷程', '建立時間']];
         list.forEach(r => {
           const parsedCat = parseCategoryField(r['追蹤類別']);
+          const colInfo = analyzeCollectionStatus(r);
+          const colSummary = [
+            colInfo.callCount > 0 ? `已電催(${colInfo.callCount}次)` : '',
+            colInfo.letterCount > 0 ? '已寄催繳信' : ''
+          ].filter(Boolean).join('、') || '尚未催款';
           rows.push([
             r['編號'] || '',
             r['狀態'] || '未結案',
+            colSummary,
             parsedCat.main,
             parsedCat.sub,
             r['原支付方式'] || '',
