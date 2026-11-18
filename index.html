@@ -5,61 +5,87 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>童綜合醫院 · 批價課交班與個案追蹤系統</title>
   <script src="https://cdn.tailwindcss.com"></script>
-  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-  <!-- SheetJS 與 JSZip：用於解析主管整理後的 .xlsx（含精準辨識 Excel 儲存格刪除線樣式） -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
   <script src="https://cdn.sheetjs.com/xlsx-0.20.3/package/dist/xlsx.full.min.js"></script>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
   <style>
-    @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;600;700&display=swap');
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Noto+Sans+TC:wght@400;500;600;700;800&display=swap');
+
+    :root {
+      --base-font-size: 16px;
+    }
     html {
-      font-size: 16px;
-      transition: font-size 0.15s ease;
+      font-size: var(--base-font-size);
+      font-family: 'Noto Sans TC', 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+      scroll-behavior: smooth;
     }
-    html[data-font-scale="sm"] { font-size: 14px; }
-    html[data-font-scale="md"] { font-size: 16px; }
-    html[data-font-scale="lg"] { font-size: 18px; }
+    html[data-font-scale="sm"] { --base-font-size: 14px; }
+    html[data-font-scale="md"] { --base-font-size: 16px; }
+    html[data-font-scale="lg"] { --base-font-size: 18px; }
+
     body {
-      font-family: 'Noto Sans TC', -apple-system, BlinkMacSystemFont, sans-serif;
+      background-color: #f4f7f6;
+      color: #1e293b;
+      margin: 0;
+      padding: 0;
     }
-    ::-webkit-scrollbar { width: 6px; height: 6px; }
-    ::-webkit-scrollbar-track { background: #f1f5f9; }
-    ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 9999px; }
-    ::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
+
+    /* 確保所有 SVG 與院徽圖示不會在任何情況下異常放大 */
+    .hospital-logo-box {
+      width: 40px;
+      height: 40px;
+      min-width: 40px;
+      min-height: 40px;
+      max-width: 40px;
+      max-height: 40px;
+    }
+
+    /* 自訂捲軸 */
+    ::-webkit-scrollbar {
+      width: 7px;
+      height: 7px;
+    }
+    ::-webkit-scrollbar-track {
+      background: #f1f5f9;
+    }
+    ::-webkit-scrollbar-thumb {
+      background: #cbd5e1;
+      border-radius: 9999px;
+    }
+    ::-webkit-scrollbar-thumb:hover {
+      background: #94a3b8;
+    }
   </style>
 </head>
-<body class="bg-slate-100 text-slate-800 min-h-screen flex flex-col">
+<body class="min-h-screen flex flex-col bg-[#f4f7f6] text-slate-800 antialiased">
 
-  <!-- ==================== 1. 登入畫面 ==================== -->
-  <div id="loginView" class="min-h-screen flex items-center justify-center p-4 bg-gradient-to-br from-slate-900 via-teal-950 to-slate-900">
-    <div class="bg-white rounded-3xl shadow-2xl w-full max-w-md p-8 border border-teal-100/20">
-      <div class="text-center mb-7">
-        <div class="w-20 h-20 bg-white rounded-2xl flex items-center justify-center mx-auto mb-4 shadow-md border border-teal-100 overflow-hidden">
+  <!-- ==================== 1. 雙重驗證登入畫面 ==================== -->
+  <div id="loginView" class="flex-1 flex items-center justify-center p-4 bg-gradient-to-br from-[#0f5c52] via-[#136f63] to-slate-900">
+    <div class="bg-white rounded-3xl shadow-2xl w-full max-w-md overflow-hidden border border-teal-100/30">
+      <div class="bg-gradient-to-r from-[#0f5c52] to-[#147467] px-6 py-7 text-center text-white relative">
+        <div class="w-16 h-16 mx-auto mb-3 bg-white rounded-2xl flex items-center justify-center shadow-lg border-2 border-teal-200/60 overflow-hidden">
           <img src="https://lh3.googleusercontent.com/d/1ss6M3mIsixuq0QHM_wDIb9c_uPg1FD6q"
             alt="童綜合醫院批價課 LOGO"
-            onerror="if(!this.dataset.tried){this.dataset.tried='1';this.src='https://drive.google.com/uc?export=view&id=1ss6M3mIsixuq0QHM_wDIb9c_uPg1FD6q';}else{this.style.display='none';this.nextElementSibling.classList.remove('hidden');}"
-            class="w-full h-full object-cover">
-          <i class="fa-solid fa-hospital-user text-3xl text-teal-700 hidden"></i>
+            referrerpolicy="no-referrer"
+            onerror="if(!this.dataset.triedThumb){this.dataset.triedThumb='1';this.src='https://drive.google.com/thumbnail?id=1ss6M3mIsixuq0QHM_wDIb9c_uPg1FD6q&sz=w400';}else{this.style.display='none';this.nextElementSibling.classList.remove('hidden');}"
+            class="w-16 h-16 rounded-2xl object-cover">
+          <div class="hidden w-16 h-16 rounded-2xl bg-[#0f5c52] text-white font-extrabold text-sm flex items-center justify-center tracking-widest">批價</div>
         </div>
-        <div class="inline-block px-3 py-1 rounded-full bg-teal-50 text-teal-700 text-xs font-bold mb-2 border border-teal-200">
-          童綜合醫院 · 批價課
-        </div>
-        <h1 class="text-2xl font-bold text-slate-800 tracking-tight">批價課交班與個案追蹤系統</h1>
-        <p class="text-xs text-slate-500 mt-2 leading-relaxed">
-          本系統僅供單位授權人員使用與查閱<br>請輸入您的員工代號及課內指定密碼進入
-        </p>
+        <p class="text-xs font-bold tracking-widest text-teal-200 uppercase">TUNG'S TAICHUNG METROHARBOR HOSPITAL</p>
+        <h1 class="text-xl font-extrabold mt-1 tracking-tight">童綜合醫院 · 批價課</h1>
+        <p class="text-xs text-teal-100 mt-1">交班與個案追蹤系統（雙重身分驗證）</p>
       </div>
 
-      <div class="space-y-4">
+      <div class="p-6 sm:p-7 space-y-4">
         <div>
           <label for="staffIdInput" class="block text-xs font-bold text-slate-700 mb-1.5">員工代號</label>
           <div class="relative">
             <span class="absolute inset-y-0 left-0 pl-3.5 flex items-center text-slate-400">
-              <i class="fa-regular fa-id-badge text-base"></i>
+              <i class="fa-solid fa-id-badge text-sm"></i>
             </span>
-            <input type="text" id="staffIdInput" autocomplete="off"
+            <input type="text" id="staffIdInput" autocomplete="username"
               onkeydown="if(event.key==='Enter') document.getElementById('deptPassInput').focus()"
-              class="w-full pl-10 pr-4 py-3 border border-slate-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-teal-600 focus:border-teal-600 text-sm transition"
-              placeholder="請輸入員工代號">
+              class="w-full pl-10 pr-4 py-3 border border-slate-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-teal-600 focus:border-teal-600 text-sm font-semibold transition"
+              placeholder="請輸入員工代號（例如：12121）">
           </div>
         </div>
 
@@ -86,102 +112,158 @@
         </div>
 
         <button id="loginBtn" onclick="handleLogin()"
-          class="w-full bg-teal-700 hover:bg-teal-800 active:bg-teal-900 text-white font-bold py-3 rounded-xl transition shadow-md hover:shadow-lg flex items-center justify-center gap-2 text-sm cursor-pointer">
+          class="w-full bg-[#0f5c52] hover:bg-[#0c4a42] active:bg-teal-950 text-white font-bold py-3 rounded-xl transition shadow-md hover:shadow-lg flex items-center justify-center gap-2 text-sm cursor-pointer">
           <i class="fa-solid fa-right-to-bracket"></i>
           <span>驗證並進入系統</span>
         </button>
+
+        <!-- 可折疊連線設定與展示模式 -->
+        <div class="pt-2 border-t border-slate-100">
+          <details class="text-xs text-slate-500">
+            <summary class="cursor-pointer font-semibold hover:text-teal-700 select-none flex items-center justify-between">
+              <span><i class="fa-solid fa-gear mr-1"></i>後端 GAS 網址設定 / 離線展示測試</span>
+              <i class="fa-solid fa-chevron-down text-[10px]"></i>
+            </summary>
+            <div class="mt-2.5 space-y-2.5 bg-slate-50 p-3 rounded-xl border border-slate-200">
+              <div>
+                <label class="block text-[11px] font-bold text-slate-600 mb-1">Google Apps Script Web App URL</label>
+                <input type="text" id="gasUrlInput" onchange="saveCustomGasUrl()"
+                  class="w-full px-2.5 py-1.5 bg-white border border-slate-300 rounded-lg text-[11px] font-mono text-slate-700 focus:outline-none focus:ring-1 focus:ring-teal-600">
+              </div>
+              <button type="button" onclick="enterDemoMode()"
+                class="w-full py-2 px-3 bg-amber-50 hover:bg-amber-100 text-amber-900 border border-amber-300 rounded-xl text-xs font-bold flex items-center justify-center gap-1.5 transition cursor-pointer">
+                <i class="fa-solid fa-flask"></i>
+                <span>進入展示預覽模式 (含看診未批測試資料)</span>
+              </button>
+            </div>
+          </details>
+        </div>
       </div>
     </div>
   </div>
 
   <!-- ==================== 2. 主系統畫面 ==================== -->
   <div id="mainView" class="hidden flex-1 flex flex-col">
-    <header class="bg-teal-900 text-white sticky top-0 z-30 shadow-md">
-      <div class="max-w-6xl mx-auto px-4 py-3 flex flex-wrap items-center justify-between gap-3">
-        <div class="flex items-center gap-3">
-          <div class="w-11 h-11 bg-white rounded-xl flex items-center justify-center shadow-sm border border-teal-500/40 shrink-0 overflow-hidden">
-            <img src="https://lh3.googleusercontent.com/d/1ss6M3mIsixuq0QHM_wDIb9c_uPg1FD6q"
-              alt="童綜合醫院批價課 LOGO"
-              onerror="if(!this.dataset.tried){this.dataset.tried='1';this.src='https://drive.google.com/uc?export=view&id=1ss6M3mIsixuq0QHM_wDIb9c_uPg1FD6q';}else{this.style.display='none';this.nextElementSibling.classList.remove('hidden');}"
-              class="w-full h-full object-cover">
-            <i class="fa-solid fa-hospital text-lg text-teal-800 hidden"></i>
-          </div>
-          <div>
-            <div class="flex items-center gap-2">
-              <span class="text-xs font-semibold text-teal-200">童綜合醫院 · 批價課</span>
+    <!-- 頂端固定導覽列 (Sticky Header：包含主標題列 + 雙分頁與常駐全庫搜尋列) -->
+    <header class="sticky top-0 z-40 shadow-md">
+      <!-- 第一層：深綠醫院識別列 -->
+      <div class="bg-gradient-to-r from-[#0f5c52] to-[#147467] text-white">
+        <div class="max-w-6xl mx-auto px-4 py-2.5 flex flex-wrap items-center justify-between gap-2.5">
+          <div class="flex items-center gap-3">
+            <div class="hospital-logo-box w-10 h-10 bg-white rounded-xl flex items-center justify-center shadow-sm border border-teal-400/40 shrink-0 overflow-hidden">
+              <img src="https://lh3.googleusercontent.com/d/1ss6M3mIsixuq0QHM_wDIb9c_uPg1FD6q"
+                alt="童綜合醫院批價課 LOGO"
+                referrerpolicy="no-referrer"
+                onerror="if(!this.dataset.triedThumb){this.dataset.triedThumb='1';this.src='https://drive.google.com/thumbnail?id=1ss6M3mIsixuq0QHM_wDIb9c_uPg1FD6q&sz=w400';}else{this.style.display='none';this.nextElementSibling.classList.remove('hidden');}"
+                class="w-10 h-10 rounded-xl object-cover">
+              <div class="hidden w-10 h-10 rounded-xl bg-[#0f5c52] text-white font-extrabold text-xs flex items-center justify-center">批價</div>
             </div>
-            <h1 class="font-bold text-white text-base sm:text-lg leading-tight">批價課交班與個案追蹤系統</h1>
-          </div>
-        </div>
-
-        <div class="flex items-center gap-2 sm:gap-3 flex-wrap">
-          <!-- 字體大小三段切換 -->
-          <div class="flex items-center bg-teal-950/60 border border-teal-700/60 p-0.5 rounded-xl" title="調整畫面字體大小">
-            <button type="button" id="fontBtnSm" onclick="setFontScale('sm')"
-              class="px-2 py-1 rounded-lg text-[11px] font-bold text-teal-200 hover:text-white transition cursor-pointer">小</button>
-            <button type="button" id="fontBtnMd" onclick="setFontScale('md')"
-              class="px-2 py-1 rounded-lg text-[11px] font-bold bg-teal-600 text-white shadow-2xs transition cursor-pointer">標準</button>
-            <button type="button" id="fontBtnLg" onclick="setFontScale('lg')"
-              class="px-2 py-1 rounded-lg text-[11px] font-bold text-teal-200 hover:text-white transition cursor-pointer">大</button>
+            <div>
+              <div class="flex items-center gap-2">
+                <span class="text-[11px] font-semibold text-teal-200">童綜合醫院 · 批價課</span>
+                <span id="demoModeBadge" class="hidden px-2 py-0.5 rounded-full bg-amber-400/20 border border-amber-300/50 text-amber-200 text-[10px] font-bold">展示測試模式</span>
+              </div>
+              <h1 class="font-extrabold text-white text-base sm:text-lg leading-tight tracking-tight">批價課交班與個案追蹤系統</h1>
+            </div>
           </div>
 
-          <!-- 主管專用：管理類別與快選按鈕 -->
-          <button id="manageCategoriesBtn" onclick="openCategoryManager()"
-            class="hidden bg-amber-500/20 hover:bg-amber-500/30 text-amber-200 border border-amber-400/40 px-3 py-2 rounded-xl text-xs font-bold transition flex items-center gap-1.5 cursor-pointer"
-            title="主管權限：增修子類別與催款/催繳信快選選項">
-            <i class="fa-solid fa-sliders"></i>
-            <span>管理類別與快選</span>
-          </button>
+          <div class="flex items-center gap-2 flex-wrap">
+            <!-- 字體大小三段切換 -->
+            <div class="flex items-center bg-teal-950/50 border border-teal-600/50 p-0.5 rounded-xl" title="調整畫面字體大小">
+              <button type="button" id="fontBtnSm" onclick="setFontScale('sm')"
+                class="px-2 py-1 rounded-lg text-[11px] font-bold text-teal-200 hover:text-white transition cursor-pointer">小</button>
+              <button type="button" id="fontBtnMd" onclick="setFontScale('md')"
+                class="px-2 py-1 rounded-lg text-[11px] font-bold bg-teal-600 text-white shadow-2xs transition cursor-pointer">標準</button>
+              <button type="button" id="fontBtnLg" onclick="setFontScale('lg')"
+                class="px-2 py-1 rounded-lg text-[11px] font-bold text-teal-200 hover:text-white transition cursor-pointer">大</button>
+            </div>
 
-          <!-- 登入者資訊 -->
-          <div class="flex items-center gap-2 bg-teal-950/60 border border-teal-700/60 px-3 py-1.5 rounded-xl">
-            <i class="fa-solid fa-user-check text-teal-300 text-xs"></i>
-            <span id="userInfoDisplay" class="text-xs font-bold text-white"></span>
-            <span id="supervisorBadge" class="hidden px-2 py-0.5 rounded-full bg-amber-400 text-amber-950 text-[10px] font-extrabold tracking-wide shadow-sm">
-              <i class="fa-solid fa-crown mr-0.5"></i>主管權限
-            </span>
+            <!-- 主管專用：管理類別與快選按鈕 -->
+            <button id="manageCategoriesBtn" onclick="openCategoryManager()"
+              class="hidden bg-amber-500/25 hover:bg-amber-500/35 text-amber-100 border border-amber-300/40 px-3 py-1.5 rounded-xl text-xs font-bold transition flex items-center gap-1.5 cursor-pointer"
+              title="主管權限：增修子類別與催款/催繳信快選選項">
+              <i class="fa-solid fa-sliders"></i>
+              <span>管理類別與快選</span>
+            </button>
+
+            <!-- 登入者資訊 -->
+            <div class="flex items-center gap-1.5 bg-teal-950/50 border border-teal-600/50 px-3 py-1.5 rounded-xl">
+              <i class="fa-solid fa-user-check text-teal-300 text-xs"></i>
+              <span id="userInfoDisplay" class="text-xs font-bold text-white"></span>
+              <span id="supervisorBadge" class="hidden px-2 py-0.5 rounded-full bg-amber-400 text-amber-950 text-[10px] font-extrabold tracking-wide shadow-2xs">
+                <i class="fa-solid fa-crown mr-0.5"></i>主管權限
+              </span>
+            </div>
+
+            <button id="refreshBtn" onclick="fetchAllData(true)"
+              class="bg-teal-800/80 hover:bg-teal-700 text-teal-100 border border-teal-500/40 px-3 py-1.5 rounded-xl text-xs font-semibold transition flex items-center gap-1.5 cursor-pointer"
+              title="重新整理資料">
+              <i id="refreshIcon" class="fa-solid fa-rotate-right"></i>
+              <span class="hidden sm:inline">重新整理</span>
+            </button>
+
+            <button onclick="handleLogout()"
+              class="bg-rose-600/90 hover:bg-rose-600 text-white px-3 py-1.5 rounded-xl text-xs font-semibold transition flex items-center gap-1.5 cursor-pointer"
+              title="登出系統">
+              <i class="fa-solid fa-right-from-bracket"></i>
+              <span class="hidden sm:inline">登出</span>
+            </button>
           </div>
-
-          <button id="refreshBtn" onclick="fetchAllData(true)"
-            class="bg-teal-800 hover:bg-teal-700 text-teal-100 border border-teal-600/50 px-3 py-2 rounded-xl text-xs font-semibold transition flex items-center gap-1.5 cursor-pointer"
-            title="重新整理資料">
-            <i id="refreshIcon" class="fa-solid fa-rotate-right"></i>
-            <span class="hidden sm:inline">重新整理</span>
-          </button>
-
-          <button onclick="handleLogout()"
-            class="bg-rose-600/90 hover:bg-rose-600 text-white px-3 py-2 rounded-xl text-xs font-semibold transition flex items-center gap-1.5 cursor-pointer"
-            title="登出系統">
-            <i class="fa-solid fa-right-from-bracket"></i>
-            <span class="hidden sm:inline">登出</span>
-          </button>
         </div>
       </div>
 
-      <!-- 雙分頁頁籤列 -->
-      <div class="bg-white border-b border-slate-200 text-slate-700">
-        <div class="max-w-6xl mx-auto px-4 flex gap-2 sm:gap-6">
-          <button onclick="switchTab('general')" id="tabGeneral"
-            class="py-3 px-2 text-sm font-bold border-b-2 border-teal-700 text-teal-800 flex items-center gap-2 transition cursor-pointer">
-            <i class="fa-solid fa-clipboard-list"></i>
-            <span>一般單位交班</span>
-            <span id="countGeneralBadge" class="px-2 py-0.5 text-xs rounded-full bg-teal-100 text-teal-800 font-bold">0</span>
-          </button>
+      <!-- 第二層：雙分頁頁籤列 + 常駐頂端全域快捷搜尋列 -->
+      <div class="bg-white/95 backdrop-blur-md border-b border-slate-200 text-slate-700">
+        <div class="max-w-6xl mx-auto px-4 py-2 flex flex-col md:flex-row md:items-center justify-between gap-2">
+          <!-- 左側：雙分頁切換 -->
+          <div class="flex items-center gap-4 sm:gap-6 shrink-0 border-b md:border-b-0 border-slate-100 pb-1.5 md:pb-0">
+            <button onclick="switchTab('general')" id="tabGeneral"
+              class="py-1.5 px-1 text-sm font-bold border-b-2 border-teal-700 text-teal-800 flex items-center gap-2 transition cursor-pointer">
+              <i class="fa-solid fa-clipboard-list"></i>
+              <span>一般單位交班</span>
+              <span id="countGeneralBadge" class="px-2 py-0.5 text-xs rounded-full bg-teal-100 text-teal-800 font-bold">0</span>
+            </button>
 
-          <button onclick="switchTab('arrears')" id="tabArrears"
-            class="py-3 px-2 text-sm font-bold border-b-2 border-transparent text-slate-500 hover:text-slate-800 flex items-center gap-2 transition cursor-pointer">
-            <i class="fa-solid fa-file-invoice-dollar"></i>
-            <span>病人費用與行政交班</span>
-            <span id="countArrearsBadge" class="px-2 py-0.5 text-xs rounded-full bg-rose-100 text-rose-700 font-bold">0</span>
-          </button>
+            <button onclick="switchTab('arrears')" id="tabArrears"
+              class="py-1.5 px-1 text-sm font-bold border-b-2 border-transparent text-slate-500 hover:text-slate-800 flex items-center gap-2 transition cursor-pointer">
+              <i class="fa-solid fa-file-invoice-dollar"></i>
+              <span>病人費用與行政交班</span>
+              <span id="countArrearsBadge" class="px-2 py-0.5 text-xs rounded-full bg-rose-100 text-rose-700 font-bold">0</span>
+            </button>
+          </div>
+
+          <!-- 右側：常駐頂端全域快捷搜尋框 + 回到頂端按鈕 -->
+          <div class="flex items-center gap-2 flex-1 md:max-w-md lg:max-w-lg">
+            <div class="relative flex-1">
+              <span class="absolute inset-y-0 left-0 pl-3 flex items-center text-teal-700 pointer-events-none">
+                <i class="fa-solid fa-magnifying-glass text-xs"></i>
+              </span>
+              <input type="text" id="searchInput" oninput="handleStickySearchInput()"
+                placeholder="常駐全庫搜尋：病歷號、姓名、日期或內容..."
+                class="w-full pl-8 pr-16 py-1.5 bg-slate-50 border border-slate-300 rounded-xl text-xs sm:text-sm font-medium text-slate-800 focus:outline-none focus:ring-2 focus:ring-teal-600 focus:border-teal-600 focus:bg-white transition">
+              <button type="button" id="clearSearchBtn" onclick="clearSearch()"
+                class="hidden absolute inset-y-0 right-1.5 my-auto h-6 px-2 rounded-lg bg-rose-100 hover:bg-rose-200 text-rose-700 text-[11px] font-bold flex items-center gap-1 transition cursor-pointer"
+                title="清除搜尋關鍵字">
+                <i class="fa-solid fa-xmark"></i>
+                <span>清除</span>
+              </button>
+            </div>
+
+            <button type="button" onclick="scrollToPageTop()"
+              class="px-2.5 py-1.5 rounded-xl bg-slate-100 hover:bg-teal-50 text-slate-600 hover:text-teal-800 border border-slate-200 text-xs font-bold flex items-center gap-1 shrink-0 transition cursor-pointer"
+              title="快速回到頁面最頂端">
+              <i class="fa-solid fa-arrow-up"></i>
+              <span class="hidden sm:inline">頂端</span>
+            </button>
+          </div>
         </div>
       </div>
     </header>
 
-    <main class="flex-1 max-w-6xl w-full mx-auto px-4 py-6 space-y-4">
-      <!-- 頂部工具列：狀態切換 / 關鍵字搜尋 / 日期排序 / 匯入與新增 -->
-      <div class="bg-white p-4 rounded-2xl shadow-sm border border-slate-200 flex flex-col lg:flex-row justify-between items-stretch lg:items-center gap-3">
-        <div class="flex flex-col sm:flex-row flex-1 gap-2.5">
+    <main class="flex-1 max-w-6xl w-full mx-auto px-4 py-5 space-y-3.5">
+      <!-- 頂部工具列：狀態切換 / 排序 / 匯入與新增 -->
+      <div class="bg-white p-3.5 sm:p-4 rounded-2xl shadow-sm border border-slate-200 flex flex-col lg:flex-row justify-between items-stretch lg:items-center gap-3">
+        <div class="flex flex-wrap items-center gap-2.5">
           <div id="statusFilterWrapper" class="hidden flex items-center bg-slate-100 p-1 rounded-xl border border-slate-200 shrink-0">
             <button onclick="setArrearsFilter('未結案')" id="filterUnresolved"
               class="px-3 py-1.5 rounded-lg text-xs font-bold bg-white text-teal-800 shadow-sm transition cursor-pointer">
@@ -197,24 +279,19 @@
             </button>
           </div>
 
-          <div class="relative flex-1 max-w-md">
-            <span class="absolute inset-y-0 left-0 pl-3.5 flex items-center text-slate-400">
-              <i class="fa-solid fa-magnifying-glass text-xs"></i>
-            </span>
-            <input type="text" id="searchInput" oninput="renderCurrentTab()"
-              placeholder="搜尋病歷號、姓名、日期、交班人或內容 (自動查全庫)..."
-              class="w-full pl-9 pr-8 py-2 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-teal-600 focus:bg-white transition">
-            <button id="clearSearchBtn" onclick="clearSearch()" class="hidden absolute inset-y-0 right-0 pr-3 flex items-center text-slate-400 hover:text-slate-600 cursor-pointer">
-              <i class="fa-solid fa-circle-xmark text-xs"></i>
-            </button>
-          </div>
-
           <div class="relative shrink-0">
             <select id="dateSortOrder" onchange="renderCurrentTab()"
               class="w-full sm:w-auto px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs sm:text-sm font-semibold text-slate-700 focus:outline-none focus:ring-2 focus:ring-teal-600 focus:bg-white transition cursor-pointer">
               <option value="desc">最新交班日期優先</option>
               <option value="asc">最舊交班日期優先</option>
+              <option value="amount_desc">待處理金額高到低</option>
             </select>
+          </div>
+
+          <!-- 搜尋進行中提示徽章 -->
+          <div id="activeSearchBanner" class="hidden items-center gap-1.5 px-3 py-1.5 rounded-xl bg-indigo-50 border border-indigo-200 text-indigo-800 text-xs font-bold">
+            <i class="fa-solid fa-magnifying-glass"></i>
+            <span id="activeSearchBannerText">全庫搜尋中</span>
           </div>
         </div>
 
@@ -235,7 +312,7 @@
           </button>
 
           <button onclick="openFormModal()"
-            class="flex-1 sm:flex-initial bg-teal-700 hover:bg-teal-800 active:bg-teal-900 text-white px-4 py-2.5 rounded-xl text-sm font-bold shadow-sm flex items-center justify-center gap-2 transition cursor-pointer">
+            class="flex-1 sm:flex-initial bg-[#0f5c52] hover:bg-[#0c4a42] active:bg-teal-950 text-white px-4 py-2.5 rounded-xl text-sm font-bold shadow-sm flex items-center justify-center gap-2 transition cursor-pointer">
             <i class="fa-solid fa-plus"></i>
             <span id="addBtnText">新增一般交班</span>
           </button>
@@ -268,7 +345,7 @@
         <div class="flex flex-wrap items-center gap-2 pt-2 border-t border-slate-100">
           <span class="text-xs font-bold text-slate-500 flex items-center gap-1.5">
             <i class="fa-regular fa-calendar-days text-teal-700"></i>
-            <span>自訂日期區間：</span>
+            <span>交班日期區間：</span>
           </span>
           <div class="flex items-center gap-1.5">
             <input type="date" id="filterStartDate" onchange="renderCurrentTab()"
@@ -320,14 +397,14 @@
       </div>
 
       <!-- 資料卡片列表容器 -->
-      <div id="listContainer" class="space-y-4"></div>
+      <div id="listContainer" class="space-y-3.5"></div>
     </main>
   </div>
 
   <!-- ==================== 3. 一般交班 新增/編輯 Modal ==================== -->
-  <div id="generalModal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-40 hidden flex items-center justify-center p-4">
+  <div id="generalModal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
     <div class="bg-white rounded-2xl shadow-2xl w-full max-w-lg overflow-hidden flex flex-col max-h-[90vh]">
-      <div class="px-6 py-4 bg-teal-900 text-white flex justify-between items-center">
+      <div class="px-6 py-4 bg-[#0f5c52] text-white flex justify-between items-center">
         <h3 id="generalModalTitle" class="font-bold text-base flex items-center gap-2">
           <i class="fa-solid fa-clipboard-list"></i>
           <span>新增一般單位交班</span>
@@ -366,14 +443,13 @@
           </div>
           <input type="file" id="genFileInput" multiple accept="image/*,.pdf,.doc,.docx,.xls,.xlsx,.csv,.txt" onchange="handleFileSelect(event, 'general')"
             class="w-full text-xs text-slate-500 file:mr-3 file:py-2 file:px-4 file:rounded-xl file:border-0 file:bg-teal-50 file:text-teal-700 file:font-bold hover:file:bg-teal-100 cursor-pointer">
-          <p class="text-[11px] text-slate-400 mt-1">截圖可直接按 Ctrl+V 貼上；文件檔案（Word / PDF / Excel）上限 10MB</p>
           <div id="genImagePreview" class="flex flex-wrap gap-2.5 mt-3"></div>
         </div>
       </div>
 
       <div class="px-6 py-3.5 bg-slate-50 border-t border-slate-200 flex justify-end gap-2.5">
         <button onclick="closeModals()" class="px-4 py-2 border border-slate-300 rounded-xl text-sm font-semibold text-slate-600 hover:bg-slate-100 transition cursor-pointer">取消</button>
-        <button id="genSubmitBtn" onclick="submitGeneral()" class="px-5 py-2 bg-teal-700 hover:bg-teal-800 text-white rounded-xl text-sm font-bold shadow-sm transition flex items-center gap-2 cursor-pointer">
+        <button id="genSubmitBtn" onclick="submitGeneral()" class="px-5 py-2 bg-[#0f5c52] hover:bg-[#0c4a42] text-white rounded-xl text-sm font-bold shadow-sm transition flex items-center gap-2 cursor-pointer">
           <i class="fa-solid fa-paper-plane"></i>
           <span>儲存送出</span>
         </button>
@@ -382,9 +458,9 @@
   </div>
 
   <!-- ==================== 4. 病人費用與特殊追蹤 新增/編輯 Modal ==================== -->
-  <div id="arrearsModal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-40 hidden flex items-center justify-center p-4">
+  <div id="arrearsModal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
     <div class="bg-white rounded-2xl shadow-2xl w-full max-w-xl overflow-hidden flex flex-col max-h-[92vh]">
-      <div class="px-6 py-4 bg-teal-900 text-white flex justify-between items-center">
+      <div class="px-6 py-4 bg-[#0f5c52] text-white flex justify-between items-center">
         <h3 id="arrearsModalTitle" class="font-bold text-base flex items-center gap-2">
           <i class="fa-solid fa-file-invoice-dollar"></i>
           <span>新增病人費用與行政交班</span>
@@ -409,7 +485,7 @@
           </div>
           <div>
             <label class="block text-xs font-bold text-slate-700 mb-1">子類別 <span class="text-rose-500">*</span></label>
-            <select id="arrSubCategory" onchange="handleSubCategoryChange()"
+            <select id="arrSubCategory"
               class="w-full px-3 py-2 border border-slate-300 rounded-xl text-sm font-semibold bg-white focus:ring-2 focus:ring-teal-600 focus:outline-none cursor-pointer">
             </select>
           </div>
@@ -505,14 +581,13 @@
           </div>
           <input type="file" id="arrFileInput" multiple accept="image/*,.pdf,.doc,.docx,.xls,.xlsx,.csv,.txt" onchange="handleFileSelect(event, 'arrears')"
             class="w-full text-xs text-slate-500 file:mr-3 file:py-2 file:px-4 file:rounded-xl file:border-0 file:bg-teal-50 file:text-teal-700 file:font-bold hover:file:bg-teal-100 cursor-pointer">
-          <p class="text-[11px] text-slate-400 mt-1">截圖可直接按 Ctrl+V 貼上；文件檔案（Word / PDF / Excel）上限 10MB</p>
           <div id="arrImagePreview" class="flex flex-wrap gap-2.5 mt-3"></div>
         </div>
       </div>
 
       <div class="px-6 py-3.5 bg-slate-50 border-t border-slate-200 flex justify-end gap-2.5">
         <button onclick="closeModals()" class="px-4 py-2 border border-slate-300 rounded-xl text-sm font-semibold text-slate-600 hover:bg-slate-100 transition cursor-pointer">取消</button>
-        <button id="arrSubmitBtn" onclick="submitArrears()" class="px-5 py-2 bg-teal-700 hover:bg-teal-800 text-white rounded-xl text-sm font-bold shadow-sm transition flex items-center gap-2 cursor-pointer">
+        <button id="arrSubmitBtn" onclick="submitArrears()" class="px-5 py-2 bg-[#0f5c52] hover:bg-[#0c4a42] text-white rounded-xl text-sm font-bold shadow-sm transition flex items-center gap-2 cursor-pointer">
           <i class="fa-solid fa-paper-plane"></i>
           <span>儲存追蹤紀錄</span>
         </button>
@@ -521,7 +596,7 @@
   </div>
 
   <!-- ==================== 5. 標記已結案 Modal ==================== -->
-  <div id="resolveModal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-40 hidden flex items-center justify-center p-4">
+  <div id="resolveModal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
     <div class="bg-white rounded-2xl shadow-2xl w-full max-w-md overflow-hidden">
       <div class="px-6 py-4 bg-emerald-700 text-white flex justify-between items-center">
         <h3 class="font-bold text-base flex items-center gap-2">
@@ -549,7 +624,7 @@
   </div>
 
   <!-- ==================== 5.5 催款電話／催繳信快速紀錄 Modal ==================== -->
-  <div id="collectionModal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-40 hidden flex items-center justify-center p-4">
+  <div id="collectionModal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
     <div class="bg-white rounded-2xl shadow-2xl w-full max-w-md overflow-hidden">
       <div id="collectionModalHeader" class="px-6 py-4 bg-indigo-700 text-white flex justify-between items-center">
         <h3 id="collectionModalTitle" class="font-bold text-base flex items-center gap-2">
@@ -600,7 +675,7 @@
   </div>
 
   <!-- ==================== 5.8 匯入看診未批報表 (支援主管 Excel 刪除線過濾 & rgnotoc.rpt) Modal ==================== -->
-  <div id="unbilledImportModal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-40 hidden flex items-center justify-center p-4">
+  <div id="unbilledImportModal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
     <div class="bg-white rounded-2xl shadow-2xl w-full max-w-5xl overflow-hidden flex flex-col max-h-[92vh]">
       <div class="px-6 py-4 bg-orange-600 text-white flex justify-between items-center">
         <h3 class="font-bold text-base flex items-center gap-2">
@@ -792,8 +867,11 @@
   <div id="toastContainer" class="fixed bottom-5 right-5 z-50 flex flex-col gap-2 pointer-events-none max-w-[90vw]"></div>
 
   <script>
-    const API_URL = 'https://script.google.com/macros/s/AKfycby8IcYXLzr-L_1OrPhTHT9X9L4CQ8kXMdpp5Q9iO4hQe-a3cdIwTqc81_lluH2LRNGmXw/exec';
+    const DEFAULT_GAS_URL = 'https://script.google.com/macros/s/AKfycby8IcYXLzr-L_1OrPhTHT9X9L4CQ8kXMdpp5Q9iO4hQe-a3cdIwTqc81_lluH2LRNGmXw/exec';
+    const GAS_URL_STORAGE_KEY = 'tungs_billing_gas_url_v1';
 
+    let currentGasUrl = localStorage.getItem(GAS_URL_STORAGE_KEY) || DEFAULT_GAS_URL;
+    let isDemoMode = false;
     let currentPwd = '';
     let currentPass = '';
     let currentStaff = { id: '', name: '', isSupervisor: false };
@@ -818,8 +896,8 @@
     let parsedUnbilledRecords = [];
     let uploadedReportFilePayload = null;
     let currentExcelWorkbook = null;
-    let currentExcelStrikeMap = {}; // { sheetName: Set(rowNumber1Based) }
-    let currentImportSourceType = 'rpt'; // 'excel' | 'rpt'
+    let currentExcelStrikeMap = {};
+    let currentImportSourceType = 'rpt';
 
     const SUBCATEGORY_STORAGE_KEY = 'tungs_cashier_subcategories_v3';
     const DEFAULT_SUBCATEGORIES = {
@@ -848,6 +926,15 @@
 
     let managerActiveTab = '欠費';
     let managerEditingIndex = -1;
+
+    function saveCustomGasUrl() {
+      const val = (document.getElementById('gasUrlInput')?.value || '').trim();
+      if (val) {
+        currentGasUrl = val;
+        localStorage.setItem(GAS_URL_STORAGE_KEY, val);
+        showToast('已更新後端 GAS 連線網址', 'info');
+      }
+    }
 
     function togglePassVisibility(inputId, btn) {
       const input = document.getElementById(inputId);
@@ -972,6 +1059,8 @@
     }
 
     document.addEventListener('DOMContentLoaded', () => {
+      const gasInput = document.getElementById('gasUrlInput');
+      if (gasInput) gasInput.value = currentGasUrl;
       initFontScale();
       populateSubCategoryDropdown();
       initClipboardPasteListener();
@@ -1183,6 +1272,116 @@
       }, 3200);
     }
 
+    // ==================== 離線展示測試模式 ====================
+    function enterDemoMode() {
+      isDemoMode = true;
+      currentPwd = '12121';
+      currentPass = 'demo';
+      currentStaff = { id: '12121', name: '陳孟萱', isSupervisor: true };
+
+      const todayStr = formatDisplayDate(getTodayISO());
+      generalData = [
+        {
+          rowIndex: 2,
+          '編號': 'HB-110201',
+          '建立時間': `${todayStr} 08:15`,
+          '交班日期': todayStr,
+          '交班人': '12121 陳孟萱',
+          '交班內容': '1. 急診 2 號自動繳費機今日早班已由資訊室完成讀卡機韌體更新，運作正常。\n2. 週五下午 14:00 課務會議，請各櫃檯輪流派員參加。',
+          '圖片': ''
+        }
+      ];
+
+      arrearsData = [
+        {
+          rowIndex: 1000002,
+          '編號': 'UB-9428441',
+          '建立時間': `${todayStr} 09:10`,
+          '交班日期': todayStr,
+          '病歷號': '891914',
+          '病人姓名': '吳建德',
+          '欠費金額': 390,
+          '欠費說明與進度': '【胃腸｜欠390】A｜11/2手機未接｜11/3手機家電皆未接｜11月寄信',
+          '圖片': '',
+          '交班人': '12121 陳孟萱',
+          '狀態': '未結案',
+          '結案備註': '',
+          '異動歷程': `[${todayStr} 09:10] 由 12121 陳孟萱 透過每日報表匯入【看診未批 - 門診看診未批】（應收 $390）`,
+          '追蹤類別': '看診未批 - 門診看診未批',
+          '原支付方式': '免',
+          '主管專用註記': '已列入 11 月第一波催繳信名單',
+          '催繳紀錄': '📞【催款電話】手機未接\n✉️【催繳信】已寄出催繳信'
+        },
+        {
+          rowIndex: 1000003,
+          '編號': 'UB-9428440',
+          '建立時間': `${todayStr} 09:10`,
+          '交班日期': todayStr,
+          '病歷號': '5288793',
+          '病人姓名': '吳宇承',
+          '欠費金額': 0,
+          '欠費說明與進度': '【921診｜欠卡】已通知母親下次門診回診補過健保卡',
+          '圖片': '',
+          '交班人': '12121 陳孟萱',
+          '狀態': '未結案',
+          '結案備註': '',
+          '異動歷程': `[${todayStr} 09:10] 由 12121 陳孟萱 匯入【看診未批 - 欠卡未批價】`,
+          '追蹤類別': '看診未批 - 欠卡未批價',
+          '原支付方式': '免',
+          '主管專用註記': '',
+          '催繳紀錄': ''
+        },
+        {
+          rowIndex: 2,
+          '編號': 'FT-115182',
+          '建立時間': `${todayStr} 08:30`,
+          '交班日期': todayStr,
+          '病歷號': '5356024',
+          '病人姓名': '趙志明',
+          '欠費金額': 1250,
+          '欠費說明與進度': '急診留觀醫療費用允諾欠款，病人家屬承諾本週五下午至住院櫃檯繳清。',
+          '圖片': '',
+          '交班人': '12121 陳孟萱',
+          '狀態': '未結案',
+          '結案備註': '',
+          '異動歷程': `[${todayStr} 08:30] 由 12121 陳孟萱 建檔【欠費 - 允諾欠款】（初始金額 $1250）`,
+          '追蹤類別': '欠費 - 允諾欠款',
+          '原支付方式': '免',
+          '主管專用註記': '',
+          '催繳紀錄': ''
+        }
+      ];
+
+      enterAuthenticatedView();
+      switchTab('arrears');
+      showToast('已進入展示預覽模式，可直接測試所有篩選與匯入功能', 'success');
+    }
+
+    function enterAuthenticatedView() {
+      document.getElementById('userInfoDisplay').textContent = currentStaff.name
+        ? `${currentStaff.name} (${currentStaff.id})`
+        : currentStaff.id;
+
+      document.getElementById('demoModeBadge').classList.toggle('hidden', !isDemoMode);
+
+      const supBadge = document.getElementById('supervisorBadge');
+      const manageCatBtn = document.getElementById('manageCategoriesBtn');
+      if (currentStaff.isSupervisor) {
+        supBadge.classList.remove('hidden');
+        manageCatBtn.classList.remove('hidden');
+      } else {
+        supBadge.classList.add('hidden');
+        manageCatBtn.classList.add('hidden');
+      }
+
+      populateSubCategoryDropdown();
+      document.getElementById('loginView').classList.add('hidden');
+      document.getElementById('mainView').classList.remove('hidden');
+      updateBadges();
+      updateQuickDaysUI();
+      renderCurrentTab();
+    }
+
     // ==================== 雙重登入驗證 ====================
     async function handleLogin() {
       const staffId = document.getElementById('staffIdInput').value.trim();
@@ -1194,6 +1393,7 @@
         return;
       }
 
+      isDemoMode = false;
       const btn = document.getElementById('loginBtn');
       const errBox = document.getElementById('loginError');
       const errText = document.getElementById('loginErrorText');
@@ -1203,7 +1403,7 @@
       btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i><span>驗證中...</span>';
 
       try {
-        const res = await fetch(`${API_URL}?pwd=${encodeURIComponent(staffId)}&pass=${encodeURIComponent(deptPass)}&_t=${Date.now()}`);
+        const res = await fetch(`${currentGasUrl}?pwd=${encodeURIComponent(staffId)}&pass=${encodeURIComponent(deptPass)}&_t=${Date.now()}`);
         const json = await res.json();
 
         if (json.status === 'success') {
@@ -1217,33 +1417,14 @@
           generalData = Array.isArray(json.data) ? json.data : [];
           arrearsData = Array.isArray(json.arrearsData) ? json.arrearsData : [];
 
-          document.getElementById('userInfoDisplay').textContent = currentStaff.name
-            ? `${currentStaff.name} (${currentStaff.id})`
-            : currentStaff.id;
-
-          const supBadge = document.getElementById('supervisorBadge');
-          const manageCatBtn = document.getElementById('manageCategoriesBtn');
-          if (currentStaff.isSupervisor) {
-            supBadge.classList.remove('hidden');
-            manageCatBtn.classList.remove('hidden');
-          } else {
-            supBadge.classList.add('hidden');
-            manageCatBtn.classList.add('hidden');
-          }
-
-          populateSubCategoryDropdown();
-          document.getElementById('loginView').classList.add('hidden');
-          document.getElementById('mainView').classList.remove('hidden');
-          updateBadges();
-          updateQuickDaysUI();
-          renderCurrentTab();
+          enterAuthenticatedView();
           showToast(`歡迎回來，${currentStaff.name || currentStaff.id}`, 'success');
         } else {
           errText.textContent = json.message || '員工代號或單位指定密碼錯誤';
           errBox.classList.remove('hidden');
         }
       } catch (err) {
-        errText.textContent = '連線異常，請確認網路狀態後再試';
+        errText.textContent = '連線異常，請確認 GAS 網址與網路狀態（或使用下方展示預覽模式）';
         errBox.classList.remove('hidden');
       } finally {
         btn.disabled = false;
@@ -1252,11 +1433,17 @@
     }
 
     async function fetchAllData(notify = false) {
+      if (isDemoMode) {
+        updateBadges();
+        renderCurrentTab();
+        if (notify) showToast('展示模式資料已更新', 'info');
+        return;
+      }
       if (!currentPwd || !currentPass) return;
       const icon = document.getElementById('refreshIcon');
       icon.classList.add('fa-spin');
       try {
-        const res = await fetch(`${API_URL}?pwd=${encodeURIComponent(currentPwd)}&pass=${encodeURIComponent(currentPass)}&_t=${Date.now()}`);
+        const res = await fetch(`${currentGasUrl}?pwd=${encodeURIComponent(currentPwd)}&pass=${encodeURIComponent(currentPass)}&_t=${Date.now()}`);
         const json = await res.json();
         if (json.status === 'success') {
           generalData = Array.isArray(json.data) ? json.data : [];
@@ -1273,6 +1460,7 @@
     }
 
     function handleLogout() {
+      isDemoMode = false;
       currentPwd = '';
       currentPass = '';
       currentStaff = { id: '', name: '', isSupervisor: false };
@@ -1302,8 +1490,8 @@
       const addBtnText = document.getElementById('addBtnText');
 
       if (tab === 'general') {
-        tabGen.className = 'py-3 px-2 text-sm font-bold border-b-2 border-teal-700 text-teal-800 flex items-center gap-2 transition cursor-pointer';
-        tabArr.className = 'py-3 px-2 text-sm font-bold border-b-2 border-transparent text-slate-500 hover:text-slate-800 flex items-center gap-2 transition cursor-pointer';
+        tabGen.className = 'py-1.5 px-1 text-sm font-bold border-b-2 border-teal-700 text-teal-800 flex items-center gap-2 transition cursor-pointer';
+        tabArr.className = 'py-1.5 px-1 text-sm font-bold border-b-2 border-transparent text-slate-500 hover:text-slate-800 flex items-center gap-2 transition cursor-pointer';
         statusWrap.classList.add('hidden');
         mainCatBar.classList.add('hidden');
         subCatBar.classList.add('hidden');
@@ -1311,8 +1499,8 @@
         importBtn.classList.add('hidden');
         addBtnText.textContent = '新增一般交班';
       } else {
-        tabArr.className = 'py-3 px-2 text-sm font-bold border-b-2 border-teal-700 text-teal-800 flex items-center gap-2 transition cursor-pointer';
-        tabGen.className = 'py-3 px-2 text-sm font-bold border-b-2 border-transparent text-slate-500 hover:text-slate-800 flex items-center gap-2 transition cursor-pointer';
+        tabArr.className = 'py-1.5 px-1 text-sm font-bold border-b-2 border-teal-700 text-teal-800 flex items-center gap-2 transition cursor-pointer';
+        tabGen.className = 'py-1.5 px-1 text-sm font-bold border-b-2 border-transparent text-slate-500 hover:text-slate-800 flex items-center gap-2 transition cursor-pointer';
         statusWrap.classList.remove('hidden');
         mainCatBar.classList.remove('hidden');
         colFilterBar.classList.remove('hidden');
@@ -1527,8 +1715,28 @@
     }
 
     function clearSearch() {
-      document.getElementById('searchInput').value = '';
+      const input = document.getElementById('searchInput');
+      if (input) {
+        input.value = '';
+        input.focus();
+      }
       renderCurrentTab();
+    }
+
+    function handleStickySearchInput() {
+      renderCurrentTab();
+      const kw = (document.getElementById('searchInput')?.value || '').trim();
+      const listEl = document.getElementById('listContainer');
+      if (kw.length > 0 && listEl) {
+        const rect = listEl.getBoundingClientRect();
+        if (rect.top < 110) {
+          window.scrollTo({ top: 0, behavior: 'smooth' });
+        }
+      }
+    }
+
+    function scrollToPageTop() {
+      window.scrollTo({ top: 0, behavior: 'smooth' });
     }
 
     function clearDateRange() {
@@ -1585,7 +1793,10 @@
       return isNaN(fallback.getTime()) ? null : fallback.getTime();
     }
 
-    function sortByHandoverDate(list, order) {
+    function sortRecords(list, order) {
+      if (order === 'amount_desc') {
+        return [...list].sort((a, b) => (Number(b['欠費金額']) || 0) - (Number(a['欠費金額']) || 0));
+      }
       const isAsc = order === 'asc';
       return [...list].sort((a, b) => {
         const timeA = getHandoverTimestamp(a['交班日期']);
@@ -1606,7 +1817,7 @@
     function getFilteredGeneralList() {
       const kw = document.getElementById('searchInput').value.trim().toLowerCase();
       const sortOrder = document.getElementById('dateSortOrder') ? document.getElementById('dateSortOrder').value : 'desc';
-      return sortByHandoverDate(generalData.filter(r => {
+      return sortRecords(generalData.filter(r => {
         if (!isWithinDateRange(r['交班日期'], 'general')) return false;
         const text = `${r['編號'] || ''} ${formatDisplayDate(r['交班日期'])} ${r['交班人'] || ''} ${r['交班內容'] || ''}`.toLowerCase();
         return text.includes(kw);
@@ -1616,7 +1827,7 @@
     function getFilteredArrearsList() {
       const kw = document.getElementById('searchInput').value.trim().toLowerCase();
       const sortOrder = document.getElementById('dateSortOrder') ? document.getElementById('dateSortOrder').value : 'desc';
-      return sortByHandoverDate(arrearsData.filter(r => {
+      return sortRecords(arrearsData.filter(r => {
         const status = String(r['狀態'] || '未結案').trim();
         if (arrearsStatusFilter === '未結案' && status === '已結清') return false;
         if (arrearsStatusFilter === '已結清' && status !== '已結清') return false;
@@ -1637,20 +1848,34 @@
     }
 
     function renderCurrentTab() {
-      const kw = document.getElementById('searchInput').value.trim().toLowerCase();
+      const rawKw = document.getElementById('searchInput').value.trim();
+      const kw = rawKw.toLowerCase();
       const startStr = document.getElementById('filterStartDate')?.value || '';
       const endStr = document.getElementById('filterEndDate')?.value || '';
       document.getElementById('clearSearchBtn').classList.toggle('hidden', !kw);
       document.getElementById('clearDateRangeBtn').classList.toggle('hidden', !startStr && !endStr);
 
+      const searchBanner = document.getElementById('activeSearchBanner');
+      const searchBannerText = document.getElementById('activeSearchBannerText');
+
       if (activeTab === 'general') {
         const filtered = getFilteredGeneralList();
         updateRangeStatusHint(generalData.length, filtered.length, kw.length > 0, Boolean(startStr || endStr));
+        if (searchBanner && searchBannerText) {
+          searchBanner.classList.toggle('hidden', !kw);
+          searchBanner.classList.toggle('flex', Boolean(kw));
+          if (kw) searchBannerText.textContent = `全庫搜尋「${rawKw}」：共 ${filtered.length} 筆`;
+        }
         renderGeneralList(filtered);
       } else {
         renderSubCategoryFilterBar();
         const filtered = getFilteredArrearsList();
         updateRangeStatusHint(arrearsData.length, filtered.length, kw.length > 0, Boolean(startStr || endStr));
+        if (searchBanner && searchBannerText) {
+          searchBanner.classList.toggle('hidden', !kw);
+          searchBanner.classList.toggle('flex', Boolean(kw));
+          if (kw) searchBannerText.textContent = `全庫搜尋「${rawKw}」：共 ${filtered.length} 筆`;
+        }
         renderArrearsList(filtered);
       }
     }
@@ -1747,7 +1972,7 @@
           <div class="bg-white rounded-2xl border border-slate-200 p-12 text-center text-slate-400">
             <i class="fa-regular fa-folder-open text-3xl mb-2 block"></i>
             <p class="text-sm font-medium">目前顯示範圍內沒有符合條件的病人費用與行政交班紀錄</p>
-            <p class="text-xs mt-1 text-slate-400">可切換上方顯示範圍（如「近 90 天」或「全部歷史」），或直接輸入病歷號全庫搜尋</p>
+            <p class="text-xs mt-1 text-slate-400">可切換上方顯示範圍（如「近 90 天」或「全部歷史」），或直接在頂端常駐搜尋框輸入病歷號全庫搜尋</p>
           </div>`;
         return;
       }
@@ -1764,7 +1989,8 @@
         const historyLines = String(r['異動歷程'] || '').split('\n').map(s => s.trim()).filter(Boolean);
         const colInfo = analyzeCollectionStatus(r);
 
-        const showPayBadge = payMethod && payMethod !== '免';
+        // 僅在「退費」類別顯示原支付方式，欠費／行政業務／看診未批一律不顯示付費方式
+        const showPayBadge = (parsedCat.main === '退費') && payMethod && payMethod !== '免';
         const payBadgeHtml = showPayBadge
           ? `<span class="px-2.5 py-0.5 rounded-full bg-slate-100 text-slate-700 border border-slate-200 text-xs font-semibold">${escapeHtml(payMethod)}</span>`
           : '';
@@ -1910,7 +2136,6 @@
       const lowerName = file.name.toLowerCase();
       const isExcel = lowerName.endsWith('.xlsx') || lowerName.endsWith('.xls') || lowerName.endsWith('.csv');
 
-      // 讀取 Base64 供上傳歸檔至 Google Drive 專屬資料夾
       const readerBase64 = new FileReader();
       readerBase64.onload = (e) => {
         uploadedReportFilePayload = {
@@ -1930,7 +2155,7 @@
         const buf = e.target.result;
         if (isExcel && typeof XLSX !== 'undefined') {
           currentImportSourceType = 'excel';
-          await loadAndParseExcelWorkbook(buf, lowerName.endsWith('.xlsx'));
+          loadAndParseExcelWorkbook(buf);
         } else {
           currentImportSourceType = 'rpt';
           document.getElementById('excelSheetSelectorWrapper').classList.add('hidden');
@@ -1950,91 +2175,10 @@
       readerBuffer.readAsArrayBuffer(file);
     }
 
-    // 解析 .xlsx 內部 XML 樣式，找出所有帶有「刪除線 (<strike/>)」的列號（1-based）
-    async function extractXlsxStrikethroughRows(arrayBuffer) {
-      const strikeMap = {};
-      if (typeof JSZip === 'undefined') return strikeMap;
-
+    function loadAndParseExcelWorkbook(arrayBuffer) {
       try {
-        const zip = await JSZip.loadAsync(arrayBuffer);
-        const stylesFile = zip.file('xl/styles.xml');
-        const wbFile = zip.file('xl/workbook.xml');
-        const relsFile = zip.file('xl/_rels/workbook.xml.rels');
-        if (!stylesFile || !wbFile || !relsFile) return strikeMap;
-
-        const parser = new DOMParser();
-
-        // 1. 找出哪些 fontId 帶有 <strike/>
-        const stylesDoc = parser.parseFromString(await stylesFile.async('string'), 'application/xml');
-        const fonts = Array.from(stylesDoc.getElementsByTagName('font'));
-        const strikeFontIds = new Set();
-        fonts.forEach((f, idx) => {
-          if (f.getElementsByTagName('strike').length > 0) {
-            strikeFontIds.add(String(idx));
-          }
-        });
-
-        // 2. 找出哪些 cellXfs (xfIndex) 套用了上述刪除線字型
-        const cellXfsEl = stylesDoc.getElementsByTagName('cellXfs')[0];
-        const strikeXfIds = new Set();
-        if (cellXfsEl) {
-          const xfs = Array.from(cellXfsEl.getElementsByTagName('xf'));
-          xfs.forEach((xf, idx) => {
-            const fontId = xf.getAttribute('fontId');
-            if (fontId && strikeFontIds.has(fontId)) {
-              strikeXfIds.add(String(idx));
-            }
-          });
-        }
-
-        if (strikeXfIds.size === 0) return strikeMap;
-
-        // 3. 對應 sheetName 與 worksheet XML 路徑
-        const relsDoc = parser.parseFromString(await relsFile.async('string'), 'application/xml');
-        const relIdToTarget = {};
-        Array.from(relsDoc.getElementsByTagName('Relationship')).forEach(rel => {
-          relIdToTarget[rel.getAttribute('Id')] = rel.getAttribute('Target');
-        });
-
-        const wbDoc = parser.parseFromString(await wbFile.async('string'), 'application/xml');
-        const sheets = Array.from(wbDoc.getElementsByTagName('sheet'));
-
-        for (const sh of sheets) {
-          const sheetName = sh.getAttribute('name');
-          const rId = sh.getAttribute('r:id') || sh.getAttributeNS('http://schemas.openxmlformats.org/officeDocument/2006/relationships', 'id');
-          let target = relIdToTarget[rId] || '';
-          if (target.startsWith('/')) target = target.slice(1);
-          if (!target.startsWith('xl/')) target = 'xl/' + target;
-
-          const shFile = zip.file(target);
-          if (!shFile) continue;
-
-          const shDoc = parser.parseFromString(await shFile.async('string'), 'application/xml');
-          const struckRows = new Set();
-          const cells = Array.from(shDoc.getElementsByTagName('c'));
-          for (const c of cells) {
-            const sIdx = c.getAttribute('s');
-            if (sIdx && strikeXfIds.has(sIdx)) {
-              const ref = c.getAttribute('r') || '';
-              // 只要病歷號(B欄)或姓名(C欄)或類別(E欄)有劃刪除線，即判定該列已結清劃掉
-              const colMatch = ref.match(/^([A-Z]+)(\d+)$/);
-              if (colMatch && ['B', 'C', 'E'].includes(colMatch[1])) {
-                struckRows.add(parseInt(colMatch[2], 10));
-              }
-            }
-          }
-          strikeMap[sheetName] = struckRows;
-        }
-      } catch (e) {
-        console.warn('刪除線 XML 解析略過：', e);
-      }
-      return strikeMap;
-    }
-
-    async function loadAndParseExcelWorkbook(arrayBuffer, isXlsx) {
-      try {
-        currentExcelWorkbook = XLSX.read(arrayBuffer, { type: 'array', cellDates: false });
-        currentExcelStrikeMap = isXlsx ? await extractXlsxStrikethroughRows(arrayBuffer) : {};
+        currentExcelWorkbook = XLSX.read(arrayBuffer, { type: 'array', cellDates: false, cellStyles: true });
+        currentExcelStrikeMap = {};
 
         const sheetNames = currentExcelWorkbook.SheetNames || [];
         if (sheetNames.length === 0) {
@@ -2042,13 +2186,31 @@
           return;
         }
 
+        // 透過 SheetJS cellStyles 直接偵測 B/C/E 欄是否有刪除線 (s.font.strike)
+        sheetNames.forEach(sName => {
+          const ws = currentExcelWorkbook.Sheets[sName];
+          const struckRows = new Set();
+          if (ws) {
+            Object.keys(ws).forEach(addr => {
+              if (addr.startsWith('!')) return;
+              const colMatch = addr.match(/^([A-Z]+)(\d+)$/);
+              if (colMatch && ['B', 'C', 'E'].includes(colMatch[1])) {
+                const cell = ws[addr];
+                if (cell && cell.s && cell.s.font && cell.s.font.strike) {
+                  struckRows.add(parseInt(colMatch[2], 10));
+                }
+              }
+            });
+          }
+          currentExcelStrikeMap[sName] = struckRows;
+        });
+
         const sheetSelectWrapper = document.getElementById('excelSheetSelectorWrapper');
         const sheetSelect = document.getElementById('excelSheetSelect');
 
         if (sheetNames.length > 1) {
           sheetSelectWrapper.classList.remove('hidden');
           sheetSelect.innerHTML = sheetNames.map(name => `<option value="${escapeHtml(name)}">${escapeHtml(name)}</option>`).join('');
-          // 預設自動選取最後一個月份分頁（例如 2026.11）
           sheetSelect.value = sheetNames[sheetNames.length - 1];
         } else {
           sheetSelectWrapper.classList.add('hidden');
@@ -2097,11 +2259,9 @@
       const rows = XLSX.utils.sheet_to_json(ws, { header: 1, defval: '' });
       const struckRowsSet = currentExcelStrikeMap[sheetName] || new Set();
 
-      // 從分頁名稱推估預設年份（如 2026.11 -> 2026）
       const yearMatch = String(sheetName).match(/(20\d{2})/);
       const defaultYear = yearMatch ? parseInt(yearMatch[1], 10) : new Date().getFullYear();
 
-      // 建立現有資料庫防重複索引
       const existingKeySet = new Set();
       arrearsData.forEach(r => {
         const dStr = formatDisplayDate(r['交班日期']);
@@ -2114,33 +2274,29 @@
 
       for (let i = 0; i < rows.length; i++) {
         const row = rows[i];
-        const excelRowNum = i + 1; // 1-based row number
+        const excelRowNum = i + 1;
 
         const colA = String(row[0] ?? '').trim();
-        const colB = String(row[1] ?? '').trim(); // 病歷號
-        const colC = String(row[2] ?? '').trim(); // 姓名
-        const colD = String(row[3] ?? '').trim(); // 科別/診間
-        const colE = String(row[4] ?? '').trim(); // 欠卡 / 未批 / 欠390
+        const colB = String(row[1] ?? '').trim();
+        const colC = String(row[2] ?? '').trim();
+        const colD = String(row[3] ?? '').trim();
+        const colE = String(row[4] ?? '').trim();
 
-        // 略過 "1/1 OK"、"8/2 OK" 等無未批案件的日期標題列
         if (/ok$/i.test(colA) && !colB && !colC) {
           continue;
         }
 
-        // 若 A 欄有有效日期，更新向下繼承日期
         const parsedDate = formatExcelCellDate(row[0], defaultYear);
         if (parsedDate) {
           currentInheritedDate = parsedDate;
         }
 
-        // 蒐集 F 欄之後（索引 5 到最後一欄）的所有非空備註文字
         const followUpNotes = [];
         for (let c = 5; c < row.length; c++) {
           const cellTxt = String(row[c] ?? '').trim();
           if (cellTxt) followUpNotes.push(cellTxt);
         }
 
-        // 若本列無病歷號與姓名，但 F 欄之後有文字，代表是上一位病人的跨列補充說明（如 889068 李天貴第 2 列）
         if (!colB && !colC && followUpNotes.length > 0 && results.length > 0) {
           const lastRec = results[results.length - 1];
           const extraText = followUpNotes.join('｜');
@@ -2153,7 +2309,6 @@
           continue;
         }
 
-        // 必須同時有病歷號（數字）與姓名才視為有效病人列
         if (!colB || !colC || !/^\d+$/.test(colB.replace(/\s+/g, ''))) {
           continue;
         }
@@ -2163,7 +2318,6 @@
         const clinicInfo = colD || '門診';
         const noteCombined = followUpNotes.join('｜');
 
-        // 解析 E 欄（欠卡 / 未批 / 欠390 / 欠1080+欠卡）
         let amount = 0;
         let subCategory = '門診看診未批';
         const amtMatch = colE.match(/欠\s*(\d+)/);
@@ -2178,7 +2332,6 @@
           subCategory = '門診看診未批';
         }
 
-        // 判斷是否已被主管劃刪除線或標記「※已繳」
         const hasStrike = struckRowsSet.has(excelRowNum);
         const hasPaidKeyword = /※\s*已繳|已繳清|退費\s*OK|已有批價紀錄/i.test(`${colE} ${noteCombined}`);
         const isPaidOrStruck = hasStrike || hasPaidKeyword;
@@ -2322,7 +2475,6 @@
         const dupKey = `${visitDate}_${patientId.trim()}`;
         const isDuplicate = existingKeySet.has(dupKey);
 
-        // 原始報表預設全部不勾選，讓主管或同仁自行勾選第一波催帳後仍未來繳費的少數案件
         results.push({
           checked: false,
           isPaidOrStruck: false,
@@ -2455,6 +2607,36 @@
         return;
       }
 
+      if (isDemoMode) {
+        const nowStr = formatDateTime(new Date());
+        selectedRecords.forEach((rec, i) => {
+          arrearsData.unshift({
+            rowIndex: 1000010 + i,
+            '編號': 'UB-' + String(Date.now()).slice(-6) + i,
+            '建立時間': nowStr,
+            '交班日期': rec.handoverDate,
+            '病歷號': rec.patientId,
+            '病人姓名': rec.patientName,
+            '欠費金額': rec.amount,
+            '欠費說明與進度': rec.content,
+            '圖片': '',
+            '交班人': '12121 陳孟萱',
+            '狀態': '未結案',
+            '結案備註': '',
+            '異動歷程': `[${nowStr}] 由 12121 陳孟萱 匯入【${rec.category}】`,
+            '追蹤類別': rec.category,
+            '原支付方式': '免',
+            '主管專用註記': '',
+            '催繳紀錄': ''
+          });
+        });
+        closeModals();
+        updateBadges();
+        renderCurrentTab();
+        showToast(`展示模式：已成功匯入 ${selectedRecords.length} 筆看診未批個案！`, 'success');
+        return;
+      }
+
       const btn = document.getElementById('unbilledSubmitBtn');
       btn.disabled = true;
       btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i><span>歸檔與匯入中...</span>';
@@ -2532,6 +2714,21 @@
         return;
       }
 
+      if (isDemoMode) {
+        const item = arrearsData.find(r => Number(r.rowIndex) === rowIndex);
+        if (item) {
+          const tag = collectionType === 'letter' ? `✉️【催繳信】${actionDate} ${outcome}` : `📞【催款電話】${actionDate} ${outcome}`;
+          const line = note ? `${tag}（${note}）` : tag;
+          item['催繳紀錄'] = item['催繳紀錄'] ? `${item['催繳紀錄']}\n${line}` : line;
+          item['欠費說明與進度'] = `${item['欠費說明與進度']}\n${line}`;
+          item['異動歷程'] = `${item['異動歷程'] || ''}\n[${actionDate}] 由 ${currentStaff.name} 紀錄：${line}`.trim();
+        }
+        closeModals();
+        renderCurrentTab();
+        showToast('展示模式：催繳紀錄已更新', 'success');
+        return;
+      }
+
       const btn = document.getElementById('colSubmitBtn');
       btn.disabled = true;
       btn.textContent = '紀錄中...';
@@ -2549,7 +2746,7 @@
           _t: String(Date.now())
         });
 
-        const res = await fetch(`${API_URL}?${queryParams.toString()}`);
+        const res = await fetch(`${currentGasUrl}?${queryParams.toString()}`);
         const json = await res.json();
         if (json.status === 'success') {
           closeModals();
@@ -2692,8 +2889,6 @@
         amountLabel.innerHTML = '待收欠費金額 ($) <span class="text-rose-500">*</span>';
       }
     }
-
-    function handleSubCategoryChange() {}
 
     function handlePayMethodChange() {
       const mainCat = document.getElementById('arrMainCategory').value;
@@ -3074,7 +3269,7 @@
     }
 
     async function postToGas(payload) {
-      const res = await fetch(API_URL, {
+      const res = await fetch(currentGasUrl, {
         method: 'POST',
         headers: { 'Content-Type': 'text/plain;charset=utf-8' },
         body: JSON.stringify(payload)
@@ -3090,6 +3285,24 @@
 
       if (!handoverDate || !author || !content) {
         showToast('請完整填寫交班日期、交班人與內容', 'error');
+        return;
+      }
+
+      if (isDemoMode) {
+        const nowStr = formatDateTime(new Date());
+        generalData.unshift({
+          rowIndex: Date.now(),
+          '編號': 'HB-' + String(Date.now()).slice(-6),
+          '建立時間': nowStr,
+          '交班日期': handoverDate,
+          '交班人': author,
+          '交班內容': content,
+          '圖片': ''
+        });
+        closeModals();
+        updateBadges();
+        renderCurrentTab();
+        showToast('展示模式：一般交班已儲存', 'success');
         return;
       }
 
@@ -3164,6 +3377,49 @@
         return;
       }
 
+      if (isDemoMode) {
+        const nowStr = formatDateTime(new Date());
+        if (rowIndex) {
+          const item = arrearsData.find(r => Number(r.rowIndex) === Number(rowIndex));
+          if (item) {
+            item['追蹤類別'] = category;
+            item['原支付方式'] = payMethod;
+            item['病歷號'] = patientId;
+            item['病人姓名'] = patientName;
+            item['交班日期'] = handoverDate;
+            item['欠費金額'] = amount;
+            item['欠費說明與進度'] = content;
+            item['主管專用註記'] = supervisorNote;
+            item['異動歷程'] = `${item['異動歷程'] || ''}\n[${nowStr}] 由 ${author} 更新金額為 $${amount}`.trim();
+          }
+        } else {
+          arrearsData.unshift({
+            rowIndex: Date.now(),
+            '編號': (mainCategory === '看診未批' ? 'UB-' : 'FT-') + String(Date.now()).slice(-6),
+            '建立時間': nowStr,
+            '交班日期': handoverDate,
+            '病歷號': patientId,
+            '病人姓名': patientName,
+            '欠費金額': amount,
+            '欠費說明與進度': content,
+            '圖片': '',
+            '交班人': author,
+            '狀態': '未結案',
+            '結案備註': '',
+            '異動歷程': `[${nowStr}] 由 ${author} 建檔【${category}】`,
+            '追蹤類別': category,
+            '原支付方式': payMethod,
+            '主管專用註記': supervisorNote,
+            '催繳紀錄': ''
+          });
+        }
+        closeModals();
+        updateBadges();
+        renderCurrentTab();
+        showToast('展示模式：追蹤紀錄已儲存', 'success');
+        return;
+      }
+
       const btn = document.getElementById('arrSubmitBtn');
       btn.disabled = true;
       btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i><span>儲存中...</span>';
@@ -3223,6 +3479,19 @@
       const rowIndex = Number(document.getElementById('resolveRowIndex').value);
       const resolveNote = document.getElementById('resolveNoteInput').value.trim();
       if (!rowIndex) return;
+
+      if (isDemoMode) {
+        const item = arrearsData.find(r => Number(r.rowIndex) === rowIndex);
+        if (item) {
+          item['狀態'] = '已結清';
+          item['結案備註'] = resolveNote || '已確認結案';
+        }
+        closeModals();
+        updateBadges();
+        renderCurrentTab();
+        showToast('展示模式：已標記為結案', 'success');
+        return;
+      }
 
       const btn = document.getElementById('resolveSubmitBtn');
       btn.disabled = true;
