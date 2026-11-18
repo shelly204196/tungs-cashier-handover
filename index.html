@@ -601,6 +601,50 @@
     </div>
   </div>
 
+  <!-- ==================== 5.2 主管專用：刪除作廢確認 Modal ==================== -->
+  <div id="deleteRecordModal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
+    <div class="bg-white rounded-2xl shadow-2xl w-full max-w-md overflow-hidden">
+      <div class="px-6 py-4 bg-rose-700 text-white flex justify-between items-center">
+        <h3 class="font-bold text-base flex items-center gap-2">
+          <i class="fa-solid fa-trash-can"></i>
+          <span>刪除交班紀錄（主管權限）</span>
+        </h3>
+        <button onclick="closeModals()" class="text-rose-100 hover:text-white p-1 cursor-pointer">
+          <i class="fa-solid fa-xmark text-lg"></i>
+        </button>
+      </div>
+      <div class="p-6 space-y-4">
+        <input type="hidden" id="deleteTargetType">
+        <input type="hidden" id="deleteRowIndex">
+        <div id="deleteTargetInfo" class="p-3 rounded-xl bg-rose-50/70 border border-rose-200 text-xs font-bold text-rose-950 leading-relaxed"></div>
+
+        <div>
+          <label class="block text-xs font-bold text-slate-700 mb-1.5">刪除／作廢原因 <span class="text-rose-500">*</span></label>
+          <div class="flex flex-wrap gap-1.5 mb-2">
+            <button type="button" onclick="document.getElementById('deleteReasonInput').value='重複交班'"
+              class="px-2.5 py-1 rounded-lg bg-slate-100 hover:bg-rose-50 text-slate-700 hover:text-rose-700 border border-slate-200 text-xs font-bold transition cursor-pointer">重複交班</button>
+            <button type="button" onclick="document.getElementById('deleteReasonInput').value='病歷號或資料建檔錯誤'"
+              class="px-2.5 py-1 rounded-lg bg-slate-100 hover:bg-rose-50 text-slate-700 hover:text-rose-700 border border-slate-200 text-xs font-bold transition cursor-pointer">資料建檔錯誤</button>
+            <button type="button" onclick="document.getElementById('deleteReasonInput').value='測試資料清除'"
+              class="px-2.5 py-1 rounded-lg bg-slate-100 hover:bg-rose-50 text-slate-700 hover:text-rose-700 border border-slate-200 text-xs font-bold transition cursor-pointer">測試資料清除</button>
+          </div>
+          <input type="text" id="deleteReasonInput" placeholder="請輸入或點選刪除原因（將寫入雲端稽核軌跡）..."
+            onkeydown="if(event.key==='Enter') submitDeleteRecord()"
+            class="w-full px-3.5 py-2 border border-slate-300 rounded-xl text-sm focus:ring-2 focus:ring-rose-600 focus:outline-none">
+        </div>
+
+        <p class="text-[11px] text-slate-500 bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 flex items-start gap-1.5 leading-relaxed">
+          <i class="fa-solid fa-shield-halved text-teal-700 mt-0.5 shrink-0"></i>
+          <span>說明：確認刪除後，此筆資料將立即從網頁列表與報表中移除，但 Google 雲端試算表仍會完整保留原始紀錄、操作主管姓名與刪除時間以供稽核。</span>
+        </p>
+      </div>
+      <div class="px-6 py-3.5 bg-slate-50 border-t border-slate-200 flex justify-end gap-2">
+        <button onclick="closeModals()" class="px-4 py-2 border border-slate-300 rounded-xl text-sm font-semibold text-slate-600 hover:bg-slate-100 transition cursor-pointer">取消</button>
+        <button id="deleteSubmitBtn" onclick="submitDeleteRecord()" class="px-5 py-2 bg-rose-600 hover:bg-rose-700 text-white rounded-xl text-sm font-bold shadow-sm transition cursor-pointer">確認刪除作廢</button>
+      </div>
+    </div>
+  </div>
+
   <!-- ==================== 5.5 催款電話／催繳信快速紀錄 Modal ==================== -->
   <div id="collectionModal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
     <div class="bg-white rounded-2xl shadow-2xl w-full max-w-md overflow-hidden">
@@ -1850,6 +1894,12 @@
                     class="px-2.5 py-1 rounded-lg bg-slate-100 hover:bg-teal-50 text-slate-700 hover:text-teal-700 border border-slate-200 text-xs font-bold transition flex items-center gap-1 cursor-pointer">
                     <i class="fa-solid fa-pen"></i><span>編輯</span>
                   </button>` : ''}
+                ${currentStaff.isSupervisor && Number(r.rowIndex) > 1 ? `
+                  <button onclick="openDeleteRecordModal('general', ${Number(r.rowIndex)})"
+                    class="px-2.5 py-1 rounded-lg bg-rose-50 hover:bg-rose-100 text-rose-700 border border-rose-200 text-xs font-bold transition flex items-center gap-1 cursor-pointer"
+                    title="主管權限：刪除作廢（雲端仍保留稽核紀錄）">
+                    <i class="fa-solid fa-trash-can"></i><span>刪除</span>
+                  </button>` : ''}
               </div>
             </div>
 
@@ -2013,6 +2063,13 @@
                     <i class="fa-solid fa-check"></i>
                     <span>標記已結案</span>
                   </button>` : ''}
+                ${currentStaff.isSupervisor && Number(r.rowIndex) > 1 ? `
+                  <button onclick="openDeleteRecordModal('arrears', ${Number(r.rowIndex)})"
+                    class="px-2.5 py-1.5 rounded-xl bg-rose-50 hover:bg-rose-100 text-rose-700 border border-rose-200 text-xs font-bold transition flex items-center gap-1 cursor-pointer"
+                    title="主管權限：刪除作廢（雲端仍保留稽核紀錄）">
+                    <i class="fa-solid fa-trash-can"></i>
+                    <span>刪除</span>
+                  </button>` : ''}
               </div>
             </div>
 
@@ -2040,8 +2097,71 @@
       document.getElementById('generalModal').classList.add('hidden');
       document.getElementById('arrearsModal').classList.add('hidden');
       document.getElementById('resolveModal').classList.add('hidden');
+      document.getElementById('deleteRecordModal').classList.add('hidden');
       document.getElementById('collectionModal').classList.add('hidden');
       document.getElementById('unbilledImportModal').classList.add('hidden');
+    }
+
+    function openDeleteRecordModal(targetType, rowIndex) {
+      if (!currentStaff.isSupervisor) return;
+      document.getElementById('deleteTargetType').value = targetType;
+      document.getElementById('deleteRowIndex').value = rowIndex;
+      document.getElementById('deleteReasonInput').value = '';
+
+      const infoEl = document.getElementById('deleteTargetInfo');
+      if (targetType === 'general') {
+        const item = generalData.find(r => Number(r.rowIndex) === Number(rowIndex));
+        if (!item) return;
+        const previewText = String(item['交班內容'] || '').slice(0, 60);
+        infoEl.textContent = `【一般單位交班】日期：${formatDisplayDate(item['交班日期'])} ｜ 交班人：${item['交班人'] || ''}\n內容摘要：${previewText}${String(item['交班內容'] || '').length > 60 ? '...' : ''}`;
+      } else {
+        const item = arrearsData.find(r => Number(r.rowIndex) === Number(rowIndex));
+        if (!item) return;
+        infoEl.textContent = `【${item['追蹤類別'] || '追蹤個案'}】病歷號：${item['病歷號'] || ''} ・ ${item['病人姓名'] || ''}（金額：$${(Number(item['欠費金額']) || 0).toLocaleString()}）`;
+      }
+
+      document.getElementById('deleteRecordModal').classList.remove('hidden');
+      setTimeout(() => document.getElementById('deleteReasonInput')?.focus(), 50);
+    }
+
+    async function submitDeleteRecord() {
+      if (!currentStaff.isSupervisor) return;
+      const targetType = document.getElementById('deleteTargetType').value;
+      const rowIndex = Number(document.getElementById('deleteRowIndex').value);
+      const reason = document.getElementById('deleteReasonInput').value.trim();
+
+      if (!reason) {
+        showToast('請填寫或點選刪除／作廢原因', 'error');
+        return;
+      }
+
+      const btn = document.getElementById('deleteSubmitBtn');
+      btn.disabled = true;
+      btn.textContent = '刪除中...';
+
+      try {
+        const json = await postToGas({
+          pwd: currentPwd,
+          pass: currentPass,
+          action: 'deleteRecord',
+          targetType,
+          rowIndex,
+          reason
+        });
+
+        if (json.status === 'success') {
+          closeModals();
+          showToast(json.message || '已刪除該筆交班紀錄', 'success');
+          await fetchAllData(false);
+        } else {
+          showToast(json.message || '刪除失敗', 'error');
+        }
+      } catch (err) {
+        showToast('連線異常，請稍後再試', 'error');
+      } finally {
+        btn.disabled = false;
+        btn.textContent = '確認刪除作廢';
+      }
     }
 
     // ==================== 看診未批名單解析引擎（支援主管整理 Excel 刪除線過濾 ＋ 原始 rgnotoc.rpt） ====================
