@@ -85,7 +85,7 @@
             <input type="text" id="staffIdInput" autocomplete="username"
               onkeydown="if(event.key==='Enter') document.getElementById('deptPassInput').focus()"
               class="w-full pl-10 pr-4 py-3 border border-slate-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-teal-600 focus:border-teal-600 text-sm font-semibold transition"
-              placeholder="請輸入員工代號（例如：12121）">
+              placeholder="請輸入員工代號">
           </div>
         </div>
 
@@ -116,28 +116,6 @@
           <i class="fa-solid fa-right-to-bracket"></i>
           <span>驗證並進入系統</span>
         </button>
-
-        <!-- 可折疊連線設定與展示模式 -->
-        <div class="pt-2 border-t border-slate-100">
-          <details class="text-xs text-slate-500">
-            <summary class="cursor-pointer font-semibold hover:text-teal-700 select-none flex items-center justify-between">
-              <span><i class="fa-solid fa-gear mr-1"></i>後端 GAS 網址設定 / 離線展示測試</span>
-              <i class="fa-solid fa-chevron-down text-[10px]"></i>
-            </summary>
-            <div class="mt-2.5 space-y-2.5 bg-slate-50 p-3 rounded-xl border border-slate-200">
-              <div>
-                <label class="block text-[11px] font-bold text-slate-600 mb-1">Google Apps Script Web App URL</label>
-                <input type="text" id="gasUrlInput" onchange="saveCustomGasUrl()"
-                  class="w-full px-2.5 py-1.5 bg-white border border-slate-300 rounded-lg text-[11px] font-mono text-slate-700 focus:outline-none focus:ring-1 focus:ring-teal-600">
-              </div>
-              <button type="button" onclick="enterDemoMode()"
-                class="w-full py-2 px-3 bg-amber-50 hover:bg-amber-100 text-amber-900 border border-amber-300 rounded-xl text-xs font-bold flex items-center justify-center gap-1.5 transition cursor-pointer">
-                <i class="fa-solid fa-flask"></i>
-                <span>進入展示預覽模式 (含看診未批測試資料)</span>
-              </button>
-            </div>
-          </details>
-        </div>
       </div>
     </div>
   </div>
@@ -161,7 +139,6 @@
             <div>
               <div class="flex items-center gap-2">
                 <span class="text-[11px] font-semibold text-teal-200">童綜合醫院 · 批價課</span>
-                <span id="demoModeBadge" class="hidden px-2 py-0.5 rounded-full bg-amber-400/20 border border-amber-300/50 text-amber-200 text-[10px] font-bold">展示測試模式</span>
               </div>
               <h1 class="font-extrabold text-white text-base sm:text-lg leading-tight tracking-tight">批價課交班與個案追蹤系統</h1>
             </div>
@@ -871,7 +848,6 @@
     const GAS_URL_STORAGE_KEY = 'tungs_billing_gas_url_v1';
 
     let currentGasUrl = localStorage.getItem(GAS_URL_STORAGE_KEY) || DEFAULT_GAS_URL;
-    let isDemoMode = false;
     let currentPwd = '';
     let currentPass = '';
     let currentStaff = { id: '', name: '', isSupervisor: false };
@@ -1059,8 +1035,6 @@
     }
 
     document.addEventListener('DOMContentLoaded', () => {
-      const gasInput = document.getElementById('gasUrlInput');
-      if (gasInput) gasInput.value = currentGasUrl;
       initFontScale();
       populateSubCategoryDropdown();
       initClipboardPasteListener();
@@ -1272,97 +1246,11 @@
       }, 3200);
     }
 
-    // ==================== 離線展示測試模式 ====================
-    function enterDemoMode() {
-      isDemoMode = true;
-      currentPwd = '12121';
-      currentPass = 'demo';
-      currentStaff = { id: '12121', name: '陳孟萱', isSupervisor: true };
-
-      const todayStr = formatDisplayDate(getTodayISO());
-      generalData = [
-        {
-          rowIndex: 2,
-          '編號': 'HB-110201',
-          '建立時間': `${todayStr} 08:15`,
-          '交班日期': todayStr,
-          '交班人': '12121 陳孟萱',
-          '交班內容': '1. 急診 2 號自動繳費機今日早班已由資訊室完成讀卡機韌體更新，運作正常。\n2. 週五下午 14:00 課務會議，請各櫃檯輪流派員參加。',
-          '圖片': ''
-        }
-      ];
-
-      arrearsData = [
-        {
-          rowIndex: 1000002,
-          '編號': 'UB-9428441',
-          '建立時間': `${todayStr} 09:10`,
-          '交班日期': todayStr,
-          '病歷號': '891914',
-          '病人姓名': '吳建德',
-          '欠費金額': 390,
-          '欠費說明與進度': '【胃腸｜欠390】A｜11/2手機未接｜11/3手機家電皆未接｜11月寄信',
-          '圖片': '',
-          '交班人': '12121 陳孟萱',
-          '狀態': '未結案',
-          '結案備註': '',
-          '異動歷程': `[${todayStr} 09:10] 由 12121 陳孟萱 透過每日報表匯入【看診未批 - 門診看診未批】（應收 $390）`,
-          '追蹤類別': '看診未批 - 門診看診未批',
-          '原支付方式': '免',
-          '主管專用註記': '已列入 11 月第一波催繳信名單',
-          '催繳紀錄': '📞【催款電話】手機未接\n✉️【催繳信】已寄出催繳信'
-        },
-        {
-          rowIndex: 1000003,
-          '編號': 'UB-9428440',
-          '建立時間': `${todayStr} 09:10`,
-          '交班日期': todayStr,
-          '病歷號': '5288793',
-          '病人姓名': '吳宇承',
-          '欠費金額': 0,
-          '欠費說明與進度': '【921診｜欠卡】已通知母親下次門診回診補過健保卡',
-          '圖片': '',
-          '交班人': '12121 陳孟萱',
-          '狀態': '未結案',
-          '結案備註': '',
-          '異動歷程': `[${todayStr} 09:10] 由 12121 陳孟萱 匯入【看診未批 - 欠卡未批價】`,
-          '追蹤類別': '看診未批 - 欠卡未批價',
-          '原支付方式': '免',
-          '主管專用註記': '',
-          '催繳紀錄': ''
-        },
-        {
-          rowIndex: 2,
-          '編號': 'FT-115182',
-          '建立時間': `${todayStr} 08:30`,
-          '交班日期': todayStr,
-          '病歷號': '5356024',
-          '病人姓名': '趙志明',
-          '欠費金額': 1250,
-          '欠費說明與進度': '急診留觀醫療費用允諾欠款，病人家屬承諾本週五下午至住院櫃檯繳清。',
-          '圖片': '',
-          '交班人': '12121 陳孟萱',
-          '狀態': '未結案',
-          '結案備註': '',
-          '異動歷程': `[${todayStr} 08:30] 由 12121 陳孟萱 建檔【欠費 - 允諾欠款】（初始金額 $1250）`,
-          '追蹤類別': '欠費 - 允諾欠款',
-          '原支付方式': '免',
-          '主管專用註記': '',
-          '催繳紀錄': ''
-        }
-      ];
-
-      enterAuthenticatedView();
-      switchTab('arrears');
-      showToast('已進入展示預覽模式，可直接測試所有篩選與匯入功能', 'success');
-    }
-
+    // ==================== 登入驗證與畫面切換 ====================
     function enterAuthenticatedView() {
       document.getElementById('userInfoDisplay').textContent = currentStaff.name
         ? `${currentStaff.name} (${currentStaff.id})`
         : currentStaff.id;
-
-      document.getElementById('demoModeBadge').classList.toggle('hidden', !isDemoMode);
 
       const supBadge = document.getElementById('supervisorBadge');
       const manageCatBtn = document.getElementById('manageCategoriesBtn');
@@ -1393,7 +1281,6 @@
         return;
       }
 
-      isDemoMode = false;
       const btn = document.getElementById('loginBtn');
       const errBox = document.getElementById('loginError');
       const errText = document.getElementById('loginErrorText');
@@ -1424,7 +1311,7 @@
           errBox.classList.remove('hidden');
         }
       } catch (err) {
-        errText.textContent = '連線異常，請確認 GAS 網址與網路狀態（或使用下方展示預覽模式）';
+        errText.textContent = '連線異常，請確認網路狀態或聯繫系統管理人員';
         errBox.classList.remove('hidden');
       } finally {
         btn.disabled = false;
@@ -1433,12 +1320,6 @@
     }
 
     async function fetchAllData(notify = false) {
-      if (isDemoMode) {
-        updateBadges();
-        renderCurrentTab();
-        if (notify) showToast('展示模式資料已更新', 'info');
-        return;
-      }
       if (!currentPwd || !currentPass) return;
       const icon = document.getElementById('refreshIcon');
       icon.classList.add('fa-spin');
@@ -1460,7 +1341,6 @@
     }
 
     function handleLogout() {
-      isDemoMode = false;
       currentPwd = '';
       currentPass = '';
       currentStaff = { id: '', name: '', isSupervisor: false };
@@ -2607,36 +2487,6 @@
         return;
       }
 
-      if (isDemoMode) {
-        const nowStr = formatDateTime(new Date());
-        selectedRecords.forEach((rec, i) => {
-          arrearsData.unshift({
-            rowIndex: 1000010 + i,
-            '編號': 'UB-' + String(Date.now()).slice(-6) + i,
-            '建立時間': nowStr,
-            '交班日期': rec.handoverDate,
-            '病歷號': rec.patientId,
-            '病人姓名': rec.patientName,
-            '欠費金額': rec.amount,
-            '欠費說明與進度': rec.content,
-            '圖片': '',
-            '交班人': '12121 陳孟萱',
-            '狀態': '未結案',
-            '結案備註': '',
-            '異動歷程': `[${nowStr}] 由 12121 陳孟萱 匯入【${rec.category}】`,
-            '追蹤類別': rec.category,
-            '原支付方式': '免',
-            '主管專用註記': '',
-            '催繳紀錄': ''
-          });
-        });
-        closeModals();
-        updateBadges();
-        renderCurrentTab();
-        showToast(`展示模式：已成功匯入 ${selectedRecords.length} 筆看診未批個案！`, 'success');
-        return;
-      }
-
       const btn = document.getElementById('unbilledSubmitBtn');
       btn.disabled = true;
       btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i><span>歸檔與匯入中...</span>';
@@ -2711,21 +2561,6 @@
 
       if (!rowIndex || !actionDate) {
         showToast('請確認執行日期', 'error');
-        return;
-      }
-
-      if (isDemoMode) {
-        const item = arrearsData.find(r => Number(r.rowIndex) === rowIndex);
-        if (item) {
-          const tag = collectionType === 'letter' ? `✉️【催繳信】${actionDate} ${outcome}` : `📞【催款電話】${actionDate} ${outcome}`;
-          const line = note ? `${tag}（${note}）` : tag;
-          item['催繳紀錄'] = item['催繳紀錄'] ? `${item['催繳紀錄']}\n${line}` : line;
-          item['欠費說明與進度'] = `${item['欠費說明與進度']}\n${line}`;
-          item['異動歷程'] = `${item['異動歷程'] || ''}\n[${actionDate}] 由 ${currentStaff.name} 紀錄：${line}`.trim();
-        }
-        closeModals();
-        renderCurrentTab();
-        showToast('展示模式：催繳紀錄已更新', 'success');
         return;
       }
 
@@ -3288,24 +3123,6 @@
         return;
       }
 
-      if (isDemoMode) {
-        const nowStr = formatDateTime(new Date());
-        generalData.unshift({
-          rowIndex: Date.now(),
-          '編號': 'HB-' + String(Date.now()).slice(-6),
-          '建立時間': nowStr,
-          '交班日期': handoverDate,
-          '交班人': author,
-          '交班內容': content,
-          '圖片': ''
-        });
-        closeModals();
-        updateBadges();
-        renderCurrentTab();
-        showToast('展示模式：一般交班已儲存', 'success');
-        return;
-      }
-
       const btn = document.getElementById('genSubmitBtn');
       btn.disabled = true;
       btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i><span>處理中...</span>';
@@ -3377,49 +3194,6 @@
         return;
       }
 
-      if (isDemoMode) {
-        const nowStr = formatDateTime(new Date());
-        if (rowIndex) {
-          const item = arrearsData.find(r => Number(r.rowIndex) === Number(rowIndex));
-          if (item) {
-            item['追蹤類別'] = category;
-            item['原支付方式'] = payMethod;
-            item['病歷號'] = patientId;
-            item['病人姓名'] = patientName;
-            item['交班日期'] = handoverDate;
-            item['欠費金額'] = amount;
-            item['欠費說明與進度'] = content;
-            item['主管專用註記'] = supervisorNote;
-            item['異動歷程'] = `${item['異動歷程'] || ''}\n[${nowStr}] 由 ${author} 更新金額為 $${amount}`.trim();
-          }
-        } else {
-          arrearsData.unshift({
-            rowIndex: Date.now(),
-            '編號': (mainCategory === '看診未批' ? 'UB-' : 'FT-') + String(Date.now()).slice(-6),
-            '建立時間': nowStr,
-            '交班日期': handoverDate,
-            '病歷號': patientId,
-            '病人姓名': patientName,
-            '欠費金額': amount,
-            '欠費說明與進度': content,
-            '圖片': '',
-            '交班人': author,
-            '狀態': '未結案',
-            '結案備註': '',
-            '異動歷程': `[${nowStr}] 由 ${author} 建檔【${category}】`,
-            '追蹤類別': category,
-            '原支付方式': payMethod,
-            '主管專用註記': supervisorNote,
-            '催繳紀錄': ''
-          });
-        }
-        closeModals();
-        updateBadges();
-        renderCurrentTab();
-        showToast('展示模式：追蹤紀錄已儲存', 'success');
-        return;
-      }
-
       const btn = document.getElementById('arrSubmitBtn');
       btn.disabled = true;
       btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i><span>儲存中...</span>';
@@ -3479,19 +3253,6 @@
       const rowIndex = Number(document.getElementById('resolveRowIndex').value);
       const resolveNote = document.getElementById('resolveNoteInput').value.trim();
       if (!rowIndex) return;
-
-      if (isDemoMode) {
-        const item = arrearsData.find(r => Number(r.rowIndex) === rowIndex);
-        if (item) {
-          item['狀態'] = '已結清';
-          item['結案備註'] = resolveNote || '已確認結案';
-        }
-        closeModals();
-        updateBadges();
-        renderCurrentTab();
-        showToast('展示模式：已標記為結案', 'success');
-        return;
-      }
 
       const btn = document.getElementById('resolveSubmitBtn');
       btn.disabled = true;
