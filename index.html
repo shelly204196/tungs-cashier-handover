@@ -6,21 +6,18 @@
   <title>童綜合醫院 · 批價課交班與個案追蹤系統</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <!-- SheetJS 與 JSZip：用於解析主管整理後的 .xlsx（含精準辨識 Excel 儲存格刪除線樣式） -->
+  <script src="https://cdn.sheetjs.com/xlsx-0.20.3/package/dist/xlsx.full.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
   <style>
     @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;600;700&display=swap');
     html {
       font-size: 16px;
       transition: font-size 0.15s ease;
     }
-    html[data-font-scale="sm"] {
-      font-size: 14px;
-    }
-    html[data-font-scale="md"] {
-      font-size: 16px;
-    }
-    html[data-font-scale="lg"] {
-      font-size: 18px;
-    }
+    html[data-font-scale="sm"] { font-size: 14px; }
+    html[data-font-scale="md"] { font-size: 16px; }
+    html[data-font-scale="lg"] { font-size: 18px; }
     body {
       font-family: 'Noto Sans TC', -apple-system, BlinkMacSystemFont, sans-serif;
     }
@@ -225,7 +222,7 @@
           <!-- 匯入看診未批報表按鈕（僅費用/追蹤分頁顯示） -->
           <button id="importUnbilledBtn" onclick="openUnbilledImportModal()"
             class="hidden bg-orange-600 hover:bg-orange-700 active:bg-orange-800 text-white px-3.5 py-2.5 rounded-xl text-xs sm:text-sm font-bold shadow-sm flex items-center justify-center gap-1.5 transition cursor-pointer"
-            title="上傳醫院 rgnotoc.rpt 患者未批價一覽表並自動歸檔與匯入">
+            title="匯入主管篩選後的看診未批 Excel (.xlsx) 或醫院原始報表 (.rpt)">
             <i class="fa-solid fa-file-import"></i>
             <span>匯入看診未批報表</span>
           </button>
@@ -602,13 +599,13 @@
     </div>
   </div>
 
-  <!-- ==================== 5.8 匯入看診未批報表 (rgnotoc.rpt) Modal ==================== -->
+  <!-- ==================== 5.8 匯入看診未批報表 (支援主管 Excel 刪除線過濾 & rgnotoc.rpt) Modal ==================== -->
   <div id="unbilledImportModal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-40 hidden flex items-center justify-center p-4">
-    <div class="bg-white rounded-2xl shadow-2xl w-full max-w-4xl overflow-hidden flex flex-col max-h-[92vh]">
+    <div class="bg-white rounded-2xl shadow-2xl w-full max-w-5xl overflow-hidden flex flex-col max-h-[92vh]">
       <div class="px-6 py-4 bg-orange-600 text-white flex justify-between items-center">
         <h3 class="font-bold text-base flex items-center gap-2">
           <i class="fa-solid fa-file-import"></i>
-          <span>匯入「患者未批價一覽表」(rgnotoc) 並歸檔至雲端資料夾</span>
+          <span>匯入「看診未批名單」（支援主管整理 Excel 刪除線自動過濾 / rgnotoc 報表）</span>
         </h3>
         <button onclick="closeModals()" class="text-orange-100 hover:text-white p-1 cursor-pointer">
           <i class="fa-solid fa-xmark text-lg"></i>
@@ -616,24 +613,41 @@
       </div>
 
       <div class="p-6 space-y-4 overflow-y-auto flex-1">
+        <!-- 檔案上傳區塊 -->
         <div class="bg-orange-50/70 border border-orange-200 rounded-xl p-4 space-y-3">
-          <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+          <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
             <div>
-              <div class="text-xs font-bold text-orange-950">步驟 1：選取資訊室產出的報表檔（支援 .rpt / .txt / .prn / .csv，自動辨識 Big5 與 UTF-8）</div>
-              <div class="text-[11px] text-orange-800 mt-0.5">上傳後原始報表會自動備份至雲端「批價課交班_看診未批每日報表」，明細則寫入獨立《看診未批追蹤表》</div>
+              <div class="text-xs font-bold text-orange-950">步驟 1：選取主管篩選後的 Excel（.xlsx / .xls / .csv）或原始報表（.rpt / .txt）</div>
+              <div class="text-[11px] text-orange-800 mt-0.5 leading-relaxed">
+                • <b>主管整理 Excel</b>：自動辨識儲存格「刪除線」與「※已繳」並排除，只勾選仍未繳費案件；自動繼承日期並合併跨列備註<br>
+                • <b>原始報表 (.rpt)</b>：預設全部不勾選，方便您依病歷號快速勾選催帳後仍未來繳費的少數幾筆
+              </div>
             </div>
-            <label class="inline-flex items-center gap-2 px-4 py-2 bg-orange-600 hover:bg-orange-700 text-white rounded-xl text-xs font-bold shadow-sm cursor-pointer shrink-0 transition">
+            <label class="inline-flex items-center gap-2 px-4 py-2.5 bg-orange-600 hover:bg-orange-700 text-white rounded-xl text-xs font-bold shadow-sm cursor-pointer shrink-0 transition">
               <i class="fa-solid fa-folder-open"></i>
-              <span>選擇報表檔案</span>
-              <input type="file" id="unbilledFileInput" accept=".rpt,.txt,.prn,.csv,.lst,text/plain" onchange="handleUnbilledFileSelect(event)" class="hidden">
+              <span>選擇 Excel 或報表檔</span>
+              <input type="file" id="unbilledFileInput" accept=".xlsx,.xls,.csv,.rpt,.txt,.prn,.lst" onchange="handleUnbilledFileSelect(event)" class="hidden">
             </label>
           </div>
-          <div id="unbilledFileStatus" class="hidden text-xs font-bold text-emerald-700 bg-emerald-50 border border-emerald-200 px-3 py-1.5 rounded-lg"></div>
+
+          <!-- 已載入檔案資訊 ＋ Excel 月份分頁切換器 -->
+          <div id="unbilledFileMetaRow" class="hidden flex flex-wrap items-center justify-between gap-2 pt-2 border-t border-orange-200/80">
+            <div id="unbilledFileStatus" class="text-xs font-bold text-emerald-800 bg-emerald-50 border border-emerald-200 px-3 py-1.5 rounded-lg"></div>
+
+            <div id="excelSheetSelectorWrapper" class="hidden flex items-center gap-2">
+              <label for="excelSheetSelect" class="text-xs font-bold text-orange-950">
+                <i class="fa-solid fa-table-list text-orange-600 mr-1"></i>選擇月份分頁：
+              </label>
+              <select id="excelSheetSelect" onchange="handleExcelSheetChange()"
+                class="px-3 py-1.5 bg-white border border-orange-300 rounded-xl text-xs font-bold text-slate-800 focus:outline-none focus:ring-2 focus:ring-orange-500 cursor-pointer">
+              </select>
+            </div>
+          </div>
         </div>
 
         <details class="bg-slate-50 border border-slate-200 rounded-xl p-3">
           <summary class="text-xs font-bold text-slate-600 cursor-pointer select-none">
-            <i class="fa-solid fa-paste text-orange-600 mr-1"></i>或者：直接貼上報表純文字內容進行解析
+            <i class="fa-solid fa-paste text-orange-600 mr-1"></i>或者：直接貼上純文字報表內容進行解析
           </summary>
           <div class="mt-2.5 space-y-2">
             <textarea id="unbilledRawTextarea" rows="4"
@@ -649,28 +663,44 @@
         <!-- 解析預覽清單 -->
         <div id="unbilledPreviewSection" class="hidden space-y-2.5">
           <div class="flex flex-wrap items-center justify-between gap-2 bg-slate-100 px-3.5 py-2.5 rounded-xl border border-slate-200">
-            <div class="flex items-center gap-3">
+            <div class="flex flex-wrap items-center gap-3">
               <label class="inline-flex items-center gap-1.5 text-xs font-bold text-slate-800 cursor-pointer">
-                <input type="checkbox" id="unbilledSelectAll" checked onchange="toggleAllUnbilledSelection(this.checked)" class="rounded text-orange-600 focus:ring-orange-500">
+                <input type="checkbox" id="unbilledSelectAll" onchange="toggleAllUnbilledSelection(this.checked)" class="rounded text-orange-600 focus:ring-orange-500 cursor-pointer">
                 <span>全選 / 取消全選</span>
               </label>
               <span id="unbilledSummaryBadge" class="text-xs font-bold text-orange-800 bg-orange-100 px-2.5 py-0.5 rounded-full"></span>
             </div>
-            <span id="unbilledDupHint" class="text-[11px] font-semibold text-slate-500"></span>
+
+            <div class="flex flex-wrap items-center gap-3">
+              <label id="hideStrikethroughWrapper" class="hidden inline-flex items-center gap-1.5 text-xs font-bold text-slate-700 cursor-pointer">
+                <input type="checkbox" id="hideStrikethroughToggle" checked onchange="renderUnbilledPreviewTable()" class="rounded text-orange-600 focus:ring-orange-500 cursor-pointer">
+                <span>隱藏已劃刪除線／※已繳列</span>
+              </label>
+
+              <div class="relative">
+                <input type="text" id="unbilledModalSearch" oninput="renderUnbilledPreviewTable()"
+                  placeholder="篩選病歷號或姓名..."
+                  class="pl-3 pr-7 py-1 bg-white border border-slate-300 rounded-lg text-xs focus:outline-none focus:ring-2 focus:ring-orange-500 w-40 sm:w-48">
+                <i class="fa-solid fa-magnifying-glass text-[10px] text-slate-400 absolute right-2.5 top-2"></i>
+              </div>
+            </div>
           </div>
 
-          <div class="border border-slate-200 rounded-xl overflow-x-auto max-h-64">
+          <div id="unbilledDupHint" class="text-[11px] font-semibold text-slate-600 px-1"></div>
+
+          <div class="border border-slate-200 rounded-xl overflow-x-auto max-h-72">
             <table class="w-full text-left border-collapse text-xs">
-              <thead class="bg-slate-100 text-slate-700 sticky top-0 border-b border-slate-200">
+              <thead class="bg-slate-100 text-slate-700 sticky top-0 border-b border-slate-200 z-10">
                 <tr>
                   <th class="py-2 px-3 w-10">匯入</th>
-                  <th class="py-2 px-3">就診日期</th>
-                  <th class="py-2 px-3">病歷號</th>
-                  <th class="py-2 px-3">姓名</th>
-                  <th class="py-2 px-3">診間／時段／診號</th>
-                  <th class="py-2 px-3">子類別</th>
-                  <th class="py-2 px-3 text-right">應收金額</th>
-                  <th class="py-2 px-3">狀態檢核</th>
+                  <th class="py-2 px-3 whitespace-nowrap">就診日期</th>
+                  <th class="py-2 px-3 whitespace-nowrap">病歷號</th>
+                  <th class="py-2 px-3 whitespace-nowrap">姓名</th>
+                  <th class="py-2 px-3 whitespace-nowrap">科別／診間</th>
+                  <th class="py-2 px-3 whitespace-nowrap">子類別</th>
+                  <th class="py-2 px-3 text-right whitespace-nowrap">應收金額</th>
+                  <th class="py-2 px-3 min-w-[220px]">催帳進度與說明</th>
+                  <th class="py-2 px-3 whitespace-nowrap">狀態檢核</th>
                 </tr>
               </thead>
               <tbody id="unbilledPreviewBody" class="divide-y divide-slate-100 bg-white"></tbody>
@@ -679,8 +709,8 @@
         </div>
       </div>
 
-      <div class="px-6 py-3.5 bg-slate-50 border-t border-slate-200 flex justify-between items-center gap-2">
-        <span class="text-[11px] text-slate-500">原始檔將自動存入專屬雲端資料夾備查</span>
+      <div class="px-6 py-3.5 bg-slate-50 border-t border-slate-200 flex flex-wrap justify-between items-center gap-2">
+        <span class="text-[11px] text-slate-500">原始上傳檔會自動備份存入 Google Drive 專屬資料夾，明細則寫入獨立《看診未批追蹤表》</span>
         <div class="flex items-center gap-2">
           <button onclick="closeModals()" class="px-4 py-2 border border-slate-300 rounded-xl text-sm font-semibold text-slate-600 hover:bg-slate-100 transition cursor-pointer">取消</button>
           <button id="unbilledSubmitBtn" onclick="submitUnbilledBatch()" disabled
@@ -715,7 +745,6 @@
       </div>
 
       <div class="p-6 space-y-4 overflow-y-auto flex-1">
-        <!-- 6 分頁切換：4 個子類別 + 2 個催繳結果快選 -->
         <div class="grid grid-cols-3 sm:grid-cols-6 gap-1 bg-slate-100 p-1 rounded-xl border border-slate-200">
           <button type="button" onclick="setMgrTab('欠費')" id="mgrTabArrears"
             class="py-1.5 px-1.5 rounded-lg text-[11px] font-bold bg-white text-rose-700 shadow-xs transition cursor-pointer">🔴 欠費</button>
@@ -785,9 +814,12 @@
     let newCompressedImages = [];
     let editingOriginalAmount = 0;
 
-    // 報表匯入暫存
+    // 報表與 Excel 匯入暫存
     let parsedUnbilledRecords = [];
     let uploadedReportFilePayload = null;
+    let currentExcelWorkbook = null;
+    let currentExcelStrikeMap = {}; // { sheetName: Set(rowNumber1Based) }
+    let currentImportSourceType = 'rpt'; // 'excel' | 'rpt'
 
     const SUBCATEGORY_STORAGE_KEY = 'tungs_cashier_subcategories_v3';
     const DEFAULT_SUBCATEGORIES = {
@@ -946,7 +978,6 @@
       updateQuickDaysUI();
     });
 
-    // ==================== 剪貼簿直接貼上截圖 (Ctrl+V / Cmd+V) ====================
     function initClipboardPasteListener() {
       document.addEventListener('paste', async (event) => {
         const genModalOpen = !document.getElementById('generalModal').classList.contains('hidden');
@@ -1001,9 +1032,7 @@
           : 'px-2 py-1 rounded-lg text-[11px] font-bold text-teal-200 hover:text-white transition cursor-pointer';
       });
 
-      if (notify) {
-        showToast(`字體大小已切換為「${labels[valid]}」`, 'info');
-      }
+      if (notify) showToast(`字體大小已切換為「${labels[valid]}」`, 'info');
     }
 
     function getTodayISO() {
@@ -1018,7 +1047,10 @@
     function formatDisplayDate(val) {
       if (!val) return '';
       const str = String(val).trim();
-      if (/^\d{4}\/\d{1,2}\/\d{1,2}$/.test(str)) return str;
+      if (/^\d{4}\/\d{1,2}\/\d{1,2}$/.test(str)) {
+        const parts = str.split('/');
+        return `${parts[0]}/${parts[1].padStart(2, '0')}/${parts[2].padStart(2, '0')}`;
+      }
       const d = new Date(str);
       if (isNaN(d.getTime())) return str;
       return `${d.getFullYear()}/${String(d.getMonth() + 1).padStart(2, '0')}/${String(d.getDate()).padStart(2, '0')}`;
@@ -1299,7 +1331,6 @@
       } else {
         arrearsDaysRange = val;
       }
-      // 切換快捷天數時自動清空自訂起訖日期，避免互斥衝突
       document.getElementById('filterStartDate').value = '';
       document.getElementById('filterEndDate').value = '';
       updateQuickDaysUI();
@@ -1309,9 +1340,7 @@
     function updateQuickDaysUI() {
       const currentVal = activeTab === 'general' ? generalDaysRange : arrearsDaysRange;
       const btn90 = document.getElementById('daysBtn90');
-      if (btn90) {
-        btn90.classList.toggle('hidden', activeTab === 'general');
-      }
+      if (btn90) btn90.classList.toggle('hidden', activeTab === 'general');
 
       const btns = [
         { key: 7, id: 'daysBtn7' },
@@ -1371,7 +1400,7 @@
 
     function setMainCatFilter(cat) {
       arrearsMainCatFilter = cat;
-      arrearsSubCatFilter = 'ALL'; // 切換大類別時自動重設子類別篩選
+      arrearsSubCatFilter = 'ALL';
       const styles = {
         ALL: { id: 'filterMainAll', active: 'px-3 py-1 rounded-full text-xs font-bold bg-slate-800 text-white shadow-xs transition cursor-pointer', inactive: 'px-3 py-1 rounded-full text-xs font-bold bg-white text-slate-600 border border-slate-200 hover:bg-slate-50 transition cursor-pointer' },
         '欠費': { id: 'filterMainArrears', active: 'px-3 py-1 rounded-full text-xs font-bold bg-rose-600 text-white shadow-xs transition cursor-pointer', inactive: 'px-3 py-1 rounded-full text-xs font-bold bg-white text-rose-700 border border-rose-200 hover:bg-rose-50 transition cursor-pointer' },
@@ -1393,7 +1422,6 @@
       renderCurrentTab();
     }
 
-    // 動態展開並計算目前大類別底下的所有子類別選項與筆數
     function renderSubCategoryFilterBar() {
       const bar = document.getElementById('subCatFilterBar');
       const btnContainer = document.getElementById('subCatFilterButtons');
@@ -1409,7 +1437,6 @@
       const map = getSubCategoryMap();
       const configuredSubs = map[arrearsMainCatFilter] || [];
 
-      // 同時統計目前狀態＋天數範圍內各子類別的筆數（含歷史資料中存在但不在預設清單的舊子類別）
       const counts = {};
       let totalInMain = 0;
 
@@ -1473,7 +1500,6 @@
       renderCurrentTab();
     }
 
-    // 解析個案的催款電話與催繳信紀錄（相容新版紀錄與舊資料關鍵字）
     function analyzeCollectionStatus(row) {
       const explicitLog = String(row['催繳紀錄'] || '').trim();
       const desc = String(row['欠費說明與進度'] || '').trim();
@@ -1489,7 +1515,7 @@
       const explicitLetterMatches = combined.match(/✉️【催繳信/g);
       if (explicitLetterMatches) letterCount += explicitLetterMatches.length;
 
-      if (callCount === 0 && /(打PT|打給|去電|電PT|致電|電聯|手機|未接|轉語音|打兒子|打太太|打家屬|聯絡pt|聯絡病人|催款電話)/i.test(desc)) {
+      if (callCount === 0 && /(打PT|打給|去電|電PT|致電|電聯|手機|未接|轉語音|打兒子|打太太|打家屬|聯絡pt|聯絡病人|催款電話|已通知)/i.test(desc)) {
         callCount = 1;
       }
 
@@ -1511,18 +1537,15 @@
       renderCurrentTab();
     }
 
-    // 智慧日期與天數範圍判斷（關鍵字搜尋或自訂區間時自動跨越天數限制查全庫）
     function isWithinDateRange(handoverDateVal, tabType = activeTab) {
       const kw = (document.getElementById('searchInput')?.value || '').trim();
       const startStr = document.getElementById('filterStartDate')?.value || '';
       const endStr = document.getElementById('filterEndDate')?.value || '';
 
-      // 有輸入關鍵字時直接放行查全庫，避免漏掉舊欠費或歷史紀錄
       if (kw.length > 0) return true;
 
       const itemTs = getHandoverTimestamp(handoverDateVal);
 
-      // 若有自訂起訖日期區間，優先依自訂區間過濾
       if (startStr || endStr) {
         if (itemTs === null) return false;
         const itemDateOnly = new Date(itemTs);
@@ -1539,10 +1562,9 @@
         return true;
       }
 
-      // 否則套用預設天數範圍（一般交班預設 7 天、費用追蹤預設 30 天）
       const daysLimit = tabType === 'general' ? generalDaysRange : arrearsDaysRange;
       if (daysLimit === 'ALL') return true;
-      if (itemTs === null) return true; // 若無合法日期字串則保留顯示以免遺漏
+      if (itemTs === null) return true;
 
       const todayStart = new Date(getTodayISO() + 'T00:00:00');
       const cutoff = new Date(todayStart);
@@ -1618,7 +1640,6 @@
       const kw = document.getElementById('searchInput').value.trim().toLowerCase();
       const startStr = document.getElementById('filterStartDate')?.value || '';
       const endStr = document.getElementById('filterEndDate')?.value || '';
-      const sortOrder = document.getElementById('dateSortOrder') ? document.getElementById('dateSortOrder').value : 'desc';
       document.getElementById('clearSearchBtn').classList.toggle('hidden', !kw);
       document.getElementById('clearDateRangeBtn').classList.toggle('hidden', !startStr && !endStr);
 
@@ -1864,22 +1885,32 @@
       document.getElementById('unbilledImportModal').classList.add('hidden');
     }
 
-    // ==================== 看診未批每日報表解析與批次匯入 ====================
+    // ==================== 看診未批名單解析引擎（支援主管整理 Excel 刪除線過濾 ＋ 原始 rgnotoc.rpt） ====================
     function openUnbilledImportModal() {
       parsedUnbilledRecords = [];
       uploadedReportFilePayload = null;
+      currentExcelWorkbook = null;
+      currentExcelStrikeMap = {};
+      currentImportSourceType = 'rpt';
+
       document.getElementById('unbilledFileInput').value = '';
       document.getElementById('unbilledRawTextarea').value = '';
-      document.getElementById('unbilledFileStatus').classList.add('hidden');
+      document.getElementById('unbilledModalSearch').value = '';
+      document.getElementById('unbilledFileMetaRow').classList.add('hidden');
+      document.getElementById('excelSheetSelectorWrapper').classList.add('hidden');
       document.getElementById('unbilledPreviewSection').classList.add('hidden');
       document.getElementById('unbilledSubmitBtn').disabled = true;
       document.getElementById('unbilledImportModal').classList.remove('hidden');
     }
 
-    function handleUnbilledFileSelect(event) {
+    async function handleUnbilledFileSelect(event) {
       const file = event.target.files?.[0];
       if (!file) return;
 
+      const lowerName = file.name.toLowerCase();
+      const isExcel = lowerName.endsWith('.xlsx') || lowerName.endsWith('.xls') || lowerName.endsWith('.csv');
+
+      // 讀取 Base64 供上傳歸檔至 Google Drive 專屬資料夾
       const readerBase64 = new FileReader();
       readerBase64.onload = (e) => {
         uploadedReportFilePayload = {
@@ -1889,30 +1920,298 @@
       };
       readerBase64.readAsDataURL(file);
 
-      // 先以 ArrayBuffer 讀取，自動偵測 UTF-8 或醫院主機常用的 Big5 / MS950 編碼
+      const metaRow = document.getElementById('unbilledFileMetaRow');
+      const statusEl = document.getElementById('unbilledFileStatus');
+      metaRow.classList.remove('hidden');
+      statusEl.textContent = `已載入檔案：${file.name}（${(file.size / 1024).toFixed(1)} KB）`;
+
       const readerBuffer = new FileReader();
-      readerBuffer.onload = (e) => {
+      readerBuffer.onload = async (e) => {
         const buf = e.target.result;
-        let decodedText = '';
-        try {
-          const utf8Decoder = new TextDecoder('utf-8', { fatal: true });
-          decodedText = utf8Decoder.decode(buf);
-        } catch (err) {
+        if (isExcel && typeof XLSX !== 'undefined') {
+          currentImportSourceType = 'excel';
+          await loadAndParseExcelWorkbook(buf, lowerName.endsWith('.xlsx'));
+        } else {
+          currentImportSourceType = 'rpt';
+          document.getElementById('excelSheetSelectorWrapper').classList.add('hidden');
+          let decodedText = '';
           try {
-            const big5Decoder = new TextDecoder('big5');
-            decodedText = big5Decoder.decode(buf);
-          } catch (e2) {
-            decodedText = new TextDecoder('utf-8').decode(buf);
+            decodedText = new TextDecoder('utf-8', { fatal: true }).decode(buf);
+          } catch (err) {
+            try {
+              decodedText = new TextDecoder('big5').decode(buf);
+            } catch (e2) {
+              decodedText = new TextDecoder('utf-8').decode(buf);
+            }
           }
+          parseRgnotocReportText(decodedText);
         }
-
-        const statusEl = document.getElementById('unbilledFileStatus');
-        statusEl.textContent = `已載入檔案：${file.name}（${(file.size / 1024).toFixed(1)} KB）`;
-        statusEl.classList.remove('hidden');
-
-        parseRgnotocReportText(decodedText);
       };
       readerBuffer.readAsArrayBuffer(file);
+    }
+
+    // 解析 .xlsx 內部 XML 樣式，找出所有帶有「刪除線 (<strike/>)」的列號（1-based）
+    async function extractXlsxStrikethroughRows(arrayBuffer) {
+      const strikeMap = {};
+      if (typeof JSZip === 'undefined') return strikeMap;
+
+      try {
+        const zip = await JSZip.loadAsync(arrayBuffer);
+        const stylesFile = zip.file('xl/styles.xml');
+        const wbFile = zip.file('xl/workbook.xml');
+        const relsFile = zip.file('xl/_rels/workbook.xml.rels');
+        if (!stylesFile || !wbFile || !relsFile) return strikeMap;
+
+        const parser = new DOMParser();
+
+        // 1. 找出哪些 fontId 帶有 <strike/>
+        const stylesDoc = parser.parseFromString(await stylesFile.async('string'), 'application/xml');
+        const fonts = Array.from(stylesDoc.getElementsByTagName('font'));
+        const strikeFontIds = new Set();
+        fonts.forEach((f, idx) => {
+          if (f.getElementsByTagName('strike').length > 0) {
+            strikeFontIds.add(String(idx));
+          }
+        });
+
+        // 2. 找出哪些 cellXfs (xfIndex) 套用了上述刪除線字型
+        const cellXfsEl = stylesDoc.getElementsByTagName('cellXfs')[0];
+        const strikeXfIds = new Set();
+        if (cellXfsEl) {
+          const xfs = Array.from(cellXfsEl.getElementsByTagName('xf'));
+          xfs.forEach((xf, idx) => {
+            const fontId = xf.getAttribute('fontId');
+            if (fontId && strikeFontIds.has(fontId)) {
+              strikeXfIds.add(String(idx));
+            }
+          });
+        }
+
+        if (strikeXfIds.size === 0) return strikeMap;
+
+        // 3. 對應 sheetName 與 worksheet XML 路徑
+        const relsDoc = parser.parseFromString(await relsFile.async('string'), 'application/xml');
+        const relIdToTarget = {};
+        Array.from(relsDoc.getElementsByTagName('Relationship')).forEach(rel => {
+          relIdToTarget[rel.getAttribute('Id')] = rel.getAttribute('Target');
+        });
+
+        const wbDoc = parser.parseFromString(await wbFile.async('string'), 'application/xml');
+        const sheets = Array.from(wbDoc.getElementsByTagName('sheet'));
+
+        for (const sh of sheets) {
+          const sheetName = sh.getAttribute('name');
+          const rId = sh.getAttribute('r:id') || sh.getAttributeNS('http://schemas.openxmlformats.org/officeDocument/2006/relationships', 'id');
+          let target = relIdToTarget[rId] || '';
+          if (target.startsWith('/')) target = target.slice(1);
+          if (!target.startsWith('xl/')) target = 'xl/' + target;
+
+          const shFile = zip.file(target);
+          if (!shFile) continue;
+
+          const shDoc = parser.parseFromString(await shFile.async('string'), 'application/xml');
+          const struckRows = new Set();
+          const cells = Array.from(shDoc.getElementsByTagName('c'));
+          for (const c of cells) {
+            const sIdx = c.getAttribute('s');
+            if (sIdx && strikeXfIds.has(sIdx)) {
+              const ref = c.getAttribute('r') || '';
+              // 只要病歷號(B欄)或姓名(C欄)或類別(E欄)有劃刪除線，即判定該列已結清劃掉
+              const colMatch = ref.match(/^([A-Z]+)(\d+)$/);
+              if (colMatch && ['B', 'C', 'E'].includes(colMatch[1])) {
+                struckRows.add(parseInt(colMatch[2], 10));
+              }
+            }
+          }
+          strikeMap[sheetName] = struckRows;
+        }
+      } catch (e) {
+        console.warn('刪除線 XML 解析略過：', e);
+      }
+      return strikeMap;
+    }
+
+    async function loadAndParseExcelWorkbook(arrayBuffer, isXlsx) {
+      try {
+        currentExcelWorkbook = XLSX.read(arrayBuffer, { type: 'array', cellDates: false });
+        currentExcelStrikeMap = isXlsx ? await extractXlsxStrikethroughRows(arrayBuffer) : {};
+
+        const sheetNames = currentExcelWorkbook.SheetNames || [];
+        if (sheetNames.length === 0) {
+          showToast('Excel 檔案內找不到任何工作表分頁', 'error');
+          return;
+        }
+
+        const sheetSelectWrapper = document.getElementById('excelSheetSelectorWrapper');
+        const sheetSelect = document.getElementById('excelSheetSelect');
+
+        if (sheetNames.length > 1) {
+          sheetSelectWrapper.classList.remove('hidden');
+          sheetSelect.innerHTML = sheetNames.map(name => `<option value="${escapeHtml(name)}">${escapeHtml(name)}</option>`).join('');
+          // 預設自動選取最後一個月份分頁（例如 2026.11）
+          sheetSelect.value = sheetNames[sheetNames.length - 1];
+        } else {
+          sheetSelectWrapper.classList.add('hidden');
+          sheetSelect.innerHTML = `<option value="${escapeHtml(sheetNames[0])}">${escapeHtml(sheetNames[0])}</option>`;
+          sheetSelect.value = sheetNames[0];
+        }
+
+        parseSelectedExcelSheet(sheetSelect.value);
+      } catch (err) {
+        showToast('Excel 解析失敗，請確認檔案格式是否正確', 'error');
+      }
+    }
+
+    function handleExcelSheetChange() {
+      const sheetName = document.getElementById('excelSheetSelect').value;
+      if (sheetName && currentExcelWorkbook) {
+        parseSelectedExcelSheet(sheetName);
+      }
+    }
+
+    function formatExcelCellDate(rawVal, fallbackYear = 2026) {
+      if (rawVal === null || rawVal === undefined || rawVal === '') return '';
+      if (typeof rawVal === 'number' && rawVal > 20000 && rawVal < 80000) {
+        const utcDays = Math.floor(rawVal - 25569);
+        const d = new Date(utcDays * 86400 * 1000);
+        if (!isNaN(d.getTime())) {
+          return `${d.getUTCFullYear()}/${String(d.getUTCMonth() + 1).padStart(2, '0')}/${String(d.getUTCDate()).padStart(2, '0')}`;
+        }
+      }
+      const str = String(rawVal).trim();
+      const ymd = str.match(/^(\d{4})[\/\-](\d{1,2})[\/\-](\d{1,2})/);
+      if (ymd) {
+        return `${ymd[1]}/${ymd[2].padStart(2, '0')}/${ymd[3].padStart(2, '0')}`;
+      }
+      const md = str.match(/^(\d{1,2})[\/\-](\d{1,2})$/);
+      if (md) {
+        return `${fallbackYear}/${md[1].padStart(2, '0')}/${md[2].padStart(2, '0')}`;
+      }
+      return '';
+    }
+
+    function parseSelectedExcelSheet(sheetName) {
+      const ws = currentExcelWorkbook.Sheets[sheetName];
+      if (!ws) return;
+
+      const rows = XLSX.utils.sheet_to_json(ws, { header: 1, defval: '' });
+      const struckRowsSet = currentExcelStrikeMap[sheetName] || new Set();
+
+      // 從分頁名稱推估預設年份（如 2026.11 -> 2026）
+      const yearMatch = String(sheetName).match(/(20\d{2})/);
+      const defaultYear = yearMatch ? parseInt(yearMatch[1], 10) : new Date().getFullYear();
+
+      // 建立現有資料庫防重複索引
+      const existingKeySet = new Set();
+      arrearsData.forEach(r => {
+        const dStr = formatDisplayDate(r['交班日期']);
+        const pid = String(r['病歷號'] || '').trim();
+        if (dStr && pid) existingKeySet.add(`${dStr}_${pid}`);
+      });
+
+      let currentInheritedDate = formatDisplayDate(getTodayISO());
+      const results = [];
+
+      for (let i = 0; i < rows.length; i++) {
+        const row = rows[i];
+        const excelRowNum = i + 1; // 1-based row number
+
+        const colA = String(row[0] ?? '').trim();
+        const colB = String(row[1] ?? '').trim(); // 病歷號
+        const colC = String(row[2] ?? '').trim(); // 姓名
+        const colD = String(row[3] ?? '').trim(); // 科別/診間
+        const colE = String(row[4] ?? '').trim(); // 欠卡 / 未批 / 欠390
+
+        // 略過 "1/1 OK"、"8/2 OK" 等無未批案件的日期標題列
+        if (/ok$/i.test(colA) && !colB && !colC) {
+          continue;
+        }
+
+        // 若 A 欄有有效日期，更新向下繼承日期
+        const parsedDate = formatExcelCellDate(row[0], defaultYear);
+        if (parsedDate) {
+          currentInheritedDate = parsedDate;
+        }
+
+        // 蒐集 F 欄之後（索引 5 到最後一欄）的所有非空備註文字
+        const followUpNotes = [];
+        for (let c = 5; c < row.length; c++) {
+          const cellTxt = String(row[c] ?? '').trim();
+          if (cellTxt) followUpNotes.push(cellTxt);
+        }
+
+        // 若本列無病歷號與姓名，但 F 欄之後有文字，代表是上一位病人的跨列補充說明（如 889068 李天貴第 2 列）
+        if (!colB && !colC && followUpNotes.length > 0 && results.length > 0) {
+          const lastRec = results[results.length - 1];
+          const extraText = followUpNotes.join('｜');
+          lastRec.content += `\n${extraText}`;
+          if (/※\s*已繳|退費\s*OK|已有批價紀錄/i.test(extraText)) {
+            lastRec.isPaidOrStruck = true;
+            lastRec.checked = false;
+            lastRec.statusReason = '已繳/退費OK(預設排除)';
+          }
+          continue;
+        }
+
+        // 必須同時有病歷號（數字）與姓名才視為有效病人列
+        if (!colB || !colC || !/^\d+$/.test(colB.replace(/\s+/g, ''))) {
+          continue;
+        }
+
+        const patientId = colB.replace(/\s+/g, '');
+        const patientName = colC;
+        const clinicInfo = colD || '門診';
+        const noteCombined = followUpNotes.join('｜');
+
+        // 解析 E 欄（欠卡 / 未批 / 欠390 / 欠1080+欠卡）
+        let amount = 0;
+        let subCategory = '門診看診未批';
+        const amtMatch = colE.match(/欠\s*(\d+)/);
+        if (amtMatch) {
+          amount = parseInt(amtMatch[1], 10) || 0;
+          subCategory = '門診看診未批';
+        } else if (colE.includes('欠卡')) {
+          amount = 0;
+          subCategory = '欠卡未批價';
+        } else if (colE.includes('未批')) {
+          amount = 0;
+          subCategory = '門診看診未批';
+        }
+
+        // 判斷是否已被主管劃刪除線或標記「※已繳」
+        const hasStrike = struckRowsSet.has(excelRowNum);
+        const hasPaidKeyword = /※\s*已繳|已繳清|退費\s*OK|已有批價紀錄/i.test(`${colE} ${noteCombined}`);
+        const isPaidOrStruck = hasStrike || hasPaidKeyword;
+
+        const dupKey = `${currentInheritedDate}_${patientId}`;
+        const isDuplicate = existingKeySet.has(dupKey);
+
+        let statusReason = '尚未繳費(可匯入)';
+        if (hasStrike) statusReason = '已劃刪除線(預設排除)';
+        else if (hasPaidKeyword) statusReason = '標記※已繳(預設排除)';
+        else if (isDuplicate) statusReason = '系統已存在(預設略過)';
+
+        const typeTag = colE ? `【${clinicInfo}｜${colE}】` : `【${clinicInfo}】`;
+        const content = noteCombined ? `${typeTag} ${noteCombined}` : `${typeTag} 尚待補批／繳費`;
+
+        results.push({
+          checked: !isPaidOrStruck && !isDuplicate,
+          isPaidOrStruck,
+          isDuplicate,
+          statusReason,
+          handoverDate: currentInheritedDate,
+          patientId,
+          patientName,
+          clinicInfo,
+          subCategory,
+          category: `看診未批 - ${subCategory}`,
+          amount,
+          content
+        });
+      }
+
+      parsedUnbilledRecords = results;
+      renderUnbilledPreviewTable();
     }
 
     function parseUnbilledTextarea() {
@@ -1921,6 +2220,8 @@
         showToast('請先貼上報表內容', 'error');
         return;
       }
+      currentImportSourceType = 'rpt';
+      document.getElementById('excelSheetSelectorWrapper').classList.add('hidden');
       uploadedReportFilePayload = {
         name: `rgnotoc_paste_${getTodayISO().replace(/-/g, '')}.txt`,
         base64: 'data:text/plain;charset=utf-8;base64,' + btoa(unescape(encodeURIComponent(txt)))
@@ -1929,7 +2230,6 @@
     }
 
     function decode11DigitClinicCode(code11) {
-      // 格式：YYY(民國年3碼) + MM(月2碼) + DD(日2碼) + S(時段1=早上,2=下午,3=晚上) + CCC(診間3碼)
       const str = String(code11 || '').trim();
       if (!/^\d{11}$/.test(str)) {
         return { westDate: '', shiftName: '', clinicRoom: str };
@@ -1951,9 +2251,7 @@
     function normalizePhone(rawPhone) {
       const digits = String(rawPhone || '').replace(/\D/g, '');
       if (!digits) return '';
-      if (digits.length === 9 && !digits.startsWith('0')) {
-        return '0' + digits;
-      }
+      if (digits.length === 9 && !digits.startsWith('0')) return '0' + digits;
       return digits;
     }
 
@@ -1961,7 +2259,6 @@
       const lines = String(rawText || '').split(/\r?\n/);
       let headerWestDate = '';
 
-      // 先抓取表頭日期（例如 日期:115/11/17）
       for (const line of lines) {
         const m = line.match(/日期\s*[:：]\s*(\d{2,3})\/(\d{1,2})\/(\d{1,2})/);
         if (m) {
@@ -1971,7 +2268,6 @@
         }
       }
 
-      // 建立現有未批/追蹤資料索引（日期 + 病歷號）以防重複匯入
       const existingKeySet = new Set();
       arrearsData.forEach(r => {
         const dStr = formatDisplayDate(r['交班日期']);
@@ -1981,15 +2277,12 @@
 
       let inheritedGroupTag = '';
       const results = [];
-
-      // 匹配明細列：[可選群組標籤] [可選時段字樣] [11碼診間代碼] [診號] [病歷號] [姓名] [掛號費] [部份負擔] [已收] [電話] [可選就醫序號]
       const rowRegex = /^\s*(?:([^\d\s]+)\s+)?(?:(上午|下午|晚上|早上)\s+)?(\d{11})\s+(\d+)\s+(\d+)\s+(\S+)\s+(\d+)\s+(\d+)\s+(\d+)\s+(\d{7,11})(?:\s+(\S+))?\s*$/;
 
       for (const line of lines) {
         const trimmed = line.trim();
         if (!trimmed) continue;
 
-        // 遇到小計或分隔線重置繼承群組標籤
         if (trimmed.includes('小計') || trimmed.includes('總計') || trimmed.startsWith('---') || trimmed.startsWith('===')) {
           inheritedGroupTag = '';
           continue;
@@ -2014,7 +2307,6 @@
         const formattedPhone = normalizePhone(rawPhone);
         const cleanIcSeq = (icSeq || '').trim();
 
-        // 智慧判斷看診未批子類別
         let subCategory = '門診看診未批';
         if (inheritedGroupTag.includes('被退')) {
           subCategory = '被退未批';
@@ -2030,9 +2322,12 @@
         const dupKey = `${visitDate}_${patientId.trim()}`;
         const isDuplicate = existingKeySet.has(dupKey);
 
+        // 原始報表預設全部不勾選，讓主管或同仁自行勾選第一波催帳後仍未來繳費的少數案件
         results.push({
-          checked: !isDuplicate,
+          checked: false,
+          isPaidOrStruck: false,
           isDuplicate,
+          statusReason: isDuplicate ? '系統已存在' : '待手動勾選匯入',
           handoverDate: visitDate,
           patientId: patientId.trim(),
           patientName: patientName.trim(),
@@ -2054,48 +2349,95 @@
       const summaryBadge = document.getElementById('unbilledSummaryBadge');
       const dupHint = document.getElementById('unbilledDupHint');
       const submitBtn = document.getElementById('unbilledSubmitBtn');
+      const hideStruckWrapper = document.getElementById('hideStrikethroughWrapper');
+      const hideStruck = document.getElementById('hideStrikethroughToggle').checked;
+      const modalKw = (document.getElementById('unbilledModalSearch').value || '').trim().toLowerCase();
 
       if (parsedUnbilledRecords.length === 0) {
         section.classList.add('hidden');
         submitBtn.disabled = true;
-        showToast('未解析到有效的患者未批價明細列，請確認報表格式', 'error');
+        showToast('未解析到有效的看診未批明細列，請確認檔案內容', 'error');
         return;
       }
 
       section.classList.remove('hidden');
+      hideStruckWrapper.classList.toggle('hidden', currentImportSourceType !== 'excel');
+
       const selectedList = parsedUnbilledRecords.filter(r => r.checked);
+      const struckCount = parsedUnbilledRecords.filter(r => r.isPaidOrStruck).length;
       const dupCount = parsedUnbilledRecords.filter(r => r.isDuplicate).length;
       const totalAmt = selectedList.reduce((sum, r) => sum + r.amount, 0);
 
-      summaryBadge.textContent = `共解析 ${parsedUnbilledRecords.length} 筆，已勾選 ${selectedList.length} 筆（合計 $${totalAmt.toLocaleString()}）`;
-      dupHint.textContent = dupCount > 0 ? `已自動排除 ${dupCount} 筆系統內重複案件` : '全部為新案件';
+      summaryBadge.textContent = `已勾選 ${selectedList.length} 筆待匯入（合計 $${totalAmt.toLocaleString()}）`;
+
+      const hints = [];
+      if (currentImportSourceType === 'excel') {
+        hints.push(`共讀取 ${parsedUnbilledRecords.length} 列，其中 ${struckCount} 筆已劃刪除線／※已繳已自動排除`);
+      } else {
+        hints.push(`原始報表共 ${parsedUnbilledRecords.length} 筆（預設全部不勾選，請勾選催帳後仍未來繳費的個案）`);
+      }
+      if (dupCount > 0) hints.push(`另有 ${dupCount} 筆系統內已存在`);
+      dupHint.textContent = hints.join(' ｜ ');
+
       submitBtn.disabled = false;
 
-      tbody.innerHTML = parsedUnbilledRecords.map((rec, idx) => `
-        <tr class="${rec.isDuplicate ? 'bg-slate-50 text-slate-400' : 'hover:bg-orange-50/40'}">
-          <td class="py-2 px-3">
-            <input type="checkbox" ${rec.checked ? 'checked' : ''} onchange="toggleSingleUnbilled(${idx}, this.checked)"
-              class="rounded text-orange-600 focus:ring-orange-500 cursor-pointer">
-          </td>
-          <td class="py-2 px-3 font-mono">${escapeHtml(rec.handoverDate)}</td>
-          <td class="py-2 px-3 font-bold">${escapeHtml(rec.patientId)}</td>
-          <td class="py-2 px-3 font-bold text-slate-800">${escapeHtml(rec.patientName)}</td>
-          <td class="py-2 px-3">${escapeHtml(rec.clinicInfo)}</td>
-          <td class="py-2 px-3">
-            <span class="px-2 py-0.5 rounded-full bg-orange-50 text-orange-800 border border-orange-200 text-[11px] font-bold">${escapeHtml(rec.subCategory)}</span>
-          </td>
-          <td class="py-2 px-3 text-right font-bold text-orange-700">$${rec.amount.toLocaleString()}</td>
-          <td class="py-2 px-3">
-            ${rec.isDuplicate
-              ? '<span class="text-[11px] font-bold text-amber-700 bg-amber-50 px-2 py-0.5 rounded">已存在(預設略過)</span>'
-              : '<span class="text-[11px] font-bold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded">可匯入</span>'}
-          </td>
-        </tr>
-      `).join('');
+      const visibleRows = parsedUnbilledRecords
+        .map((rec, originalIdx) => ({ rec, originalIdx }))
+        .filter(({ rec }) => {
+          if (currentImportSourceType === 'excel' && hideStruck && rec.isPaidOrStruck) return false;
+          if (modalKw) {
+            const text = `${rec.patientId} ${rec.patientName} ${rec.clinicInfo} ${rec.content}`.toLowerCase();
+            if (!text.includes(modalKw)) return false;
+          }
+          return true;
+        });
+
+      if (visibleRows.length === 0) {
+        tbody.innerHTML = `<tr><td colspan="9" class="py-6 text-center text-slate-400">目前篩選條件下沒有符合的明細列</td></tr>`;
+        return;
+      }
+
+      tbody.innerHTML = visibleRows.map(({ rec, originalIdx }) => {
+        const rowClass = rec.isPaidOrStruck
+          ? 'bg-slate-50 text-slate-400 line-through'
+          : (rec.isDuplicate ? 'bg-amber-50/30 text-slate-500' : (rec.checked ? 'bg-orange-50/40' : 'hover:bg-slate-50'));
+
+        let statusBadge = `<span class="text-[11px] font-bold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded">${escapeHtml(rec.statusReason)}</span>`;
+        if (rec.isPaidOrStruck) {
+          statusBadge = `<span class="text-[11px] font-bold text-slate-500 bg-slate-200 px-2 py-0.5 rounded no-underline inline-block">${escapeHtml(rec.statusReason)}</span>`;
+        } else if (rec.isDuplicate) {
+          statusBadge = `<span class="text-[11px] font-bold text-amber-700 bg-amber-100 px-2 py-0.5 rounded">${escapeHtml(rec.statusReason)}</span>`;
+        }
+
+        return `
+          <tr class="${rowClass}">
+            <td class="py-2 px-3">
+              <input type="checkbox" ${rec.checked ? 'checked' : ''} onchange="toggleSingleUnbilled(${originalIdx}, this.checked)"
+                class="rounded text-orange-600 focus:ring-orange-500 cursor-pointer">
+            </td>
+            <td class="py-2 px-3 font-mono whitespace-nowrap">${escapeHtml(rec.handoverDate)}</td>
+            <td class="py-2 px-3 font-bold whitespace-nowrap">${escapeHtml(rec.patientId)}</td>
+            <td class="py-2 px-3 font-bold whitespace-nowrap ${rec.isPaidOrStruck ? '' : 'text-slate-800'}">${escapeHtml(rec.patientName)}</td>
+            <td class="py-2 px-3 whitespace-nowrap">${escapeHtml(rec.clinicInfo)}</td>
+            <td class="py-2 px-3 whitespace-nowrap">
+              <span class="px-2 py-0.5 rounded-full bg-orange-50 text-orange-800 border border-orange-200 text-[11px] font-bold">${escapeHtml(rec.subCategory)}</span>
+            </td>
+            <td class="py-2 px-3 text-right font-bold whitespace-nowrap ${rec.isPaidOrStruck ? '' : 'text-orange-700'}">$${rec.amount.toLocaleString()}</td>
+            <td class="py-2 px-3 text-[11px] leading-relaxed max-w-xs break-words">${escapeHtml(rec.content)}</td>
+            <td class="py-2 px-3 whitespace-nowrap">${statusBadge}</td>
+          </tr>
+        `;
+      }).join('');
     }
 
     function toggleAllUnbilledSelection(checked) {
-      parsedUnbilledRecords.forEach(r => { r.checked = checked; });
+      const hideStruck = document.getElementById('hideStrikethroughToggle').checked;
+      parsedUnbilledRecords.forEach(r => {
+        if (checked && currentImportSourceType === 'excel' && hideStruck && r.isPaidOrStruck) {
+          return;
+        }
+        r.checked = checked;
+      });
       renderUnbilledPreviewTable();
     }
 
@@ -2328,9 +2670,7 @@
       const paySelect = document.getElementById('arrPayMethod');
       const amountLabel = document.getElementById('arrAmountLabel');
 
-      if (!keepSub) {
-        populateSubCategoryDropdown();
-      }
+      if (!keepSub) populateSubCategoryDropdown();
 
       if (mainCat === '欠費' || mainCat === '行政業務' || mainCat === '看診未批') {
         payGroup.classList.add('hidden');
@@ -2338,9 +2678,7 @@
         document.getElementById('arrCardRefundHint').classList.add('hidden');
       } else {
         payGroup.classList.remove('hidden');
-        if (!paySelect.value || paySelect.value === '免') {
-          paySelect.value = '現金';
-        }
+        if (!paySelect.value || paySelect.value === '免') paySelect.value = '現金';
         handlePayMethodChange();
       }
 
