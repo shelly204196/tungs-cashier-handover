@@ -726,47 +726,48 @@
             <div class="flex flex-wrap items-center gap-3">
               <label id="hideStrikethroughWrapper" class="hidden inline-flex items-center gap-1.5 text-xs font-bold text-slate-700 cursor-pointer">
                 <input type="checkbox" id="hideStrikethroughToggle" checked onchange="renderUnbilledPreviewTable()" class="rounded text-orange-600 focus:ring-orange-500 cursor-pointer">
-                <span>隱藏已劃刪除線／※已繳列</span>
+                <span>隱藏已劃刪除線 / 已繳列</span>
               </label>
 
               <div class="relative">
                 <input type="text" id="unbilledModalSearch" oninput="renderUnbilledPreviewTable()"
-                  placeholder="篩選病歷號或姓名..."
-                  class="pl-3 pr-7 py-1 bg-white border border-slate-300 rounded-lg text-xs focus:outline-none focus:ring-2 focus:ring-orange-500 w-40 sm:w-48">
-                <i class="fa-solid fa-magnifying-glass text-[10px] text-slate-400 absolute right-2.5 top-2"></i>
+                  placeholder="快速篩選病歷號或姓名..."
+                  class="px-3 py-1.5 bg-white border border-slate-300 rounded-lg text-xs focus:outline-none focus:ring-2 focus:ring-orange-500">
               </div>
+
+              <span id="unbilledDupHint" class="text-[11px] font-bold text-slate-600"></span>
             </div>
           </div>
 
-          <div id="unbilledDupHint" class="text-[11px] font-semibold text-slate-600 px-1"></div>
-
-          <div class="border border-slate-200 rounded-xl overflow-x-auto max-h-72">
+          <div class="border border-slate-200 rounded-xl overflow-x-auto max-h-80">
             <table class="w-full text-left border-collapse text-xs">
-              <thead class="bg-slate-100 text-slate-700 sticky top-0 border-b border-slate-200 z-10">
+              <thead class="bg-slate-800 text-white sticky top-0">
                 <tr>
-                  <th class="py-2 px-3 w-10">匯入</th>
-                  <th class="py-2 px-3 whitespace-nowrap">就診日期</th>
-                  <th class="py-2 px-3 whitespace-nowrap">病歷號</th>
-                  <th class="py-2 px-3 whitespace-nowrap">姓名</th>
-                  <th class="py-2 px-3 whitespace-nowrap">科別／診間</th>
-                  <th class="py-2 px-3 whitespace-nowrap">子類別</th>
-                  <th class="py-2 px-3 text-right whitespace-nowrap">應收金額</th>
-                  <th class="py-2 px-3 min-w-[220px]">催帳進度與說明</th>
-                  <th class="py-2 px-3 whitespace-nowrap">狀態檢核</th>
+                  <th class="py-2 px-3 w-10">選取</th>
+                  <th class="py-2 px-3">就診日期</th>
+                  <th class="py-2 px-3">病歷號</th>
+                  <th class="py-2 px-3">病人姓名</th>
+                  <th class="py-2 px-3">科別/診間</th>
+                  <th class="py-2 px-3">判定子類別</th>
+                  <th class="py-2 px-3 text-right">應收金額</th>
+                  <th class="py-2 px-3">催帳進度與說明</th>
+                  <th class="py-2 px-3">狀態</th>
                 </tr>
               </thead>
-              <tbody id="unbilledPreviewBody" class="divide-y divide-slate-100 bg-white"></tbody>
+              <tbody id="unbilledPreviewBody" class="divide-y divide-slate-200 bg-white"></tbody>
             </table>
           </div>
         </div>
       </div>
 
-      <div class="px-6 py-3.5 bg-slate-50 border-t border-slate-200 flex flex-wrap justify-between items-center gap-2">
-        <span class="text-[11px] text-slate-500">原始上傳檔會自動備份存入 Google Drive 專屬資料夾，明細則寫入獨立《看診未批追蹤表》</span>
+      <div class="px-6 py-3.5 bg-slate-50 border-t border-slate-200 flex justify-between items-center gap-2">
+        <span class="text-[11px] text-slate-500">
+          <i class="fa-solid fa-cloud-arrow-up text-orange-600 mr-1"></i>原始檔案將自動備份至雲端硬碟「批價課交班_看診未批每日報表」
+        </span>
         <div class="flex items-center gap-2">
           <button onclick="closeModals()" class="px-4 py-2 border border-slate-300 rounded-xl text-sm font-semibold text-slate-600 hover:bg-slate-100 transition cursor-pointer">取消</button>
           <button id="unbilledSubmitBtn" onclick="submitUnbilledBatch()" disabled
-            class="px-5 py-2 bg-orange-600 hover:bg-orange-700 disabled:bg-slate-300 disabled:cursor-not-allowed text-white rounded-xl text-sm font-bold shadow-sm transition flex items-center gap-2 cursor-pointer">
+            class="px-5 py-2 bg-orange-600 hover:bg-orange-700 disabled:opacity-40 text-white rounded-xl text-sm font-bold shadow-sm transition flex items-center gap-2 cursor-pointer">
             <i class="fa-solid fa-cloud-arrow-up"></i>
             <span>確認歸檔並批次匯入</span>
           </button>
@@ -775,12 +776,61 @@
     </div>
   </div>
 
-  <!-- ==================== 6. 圖片燈箱預覽 Modal ==================== -->
-  <div id="lightboxModal" onclick="closeLightbox(event)" class="fixed inset-0 bg-slate-950/90 z-50 hidden flex items-center justify-center p-4">
-    <button onclick="closeLightbox(event, true)" class="absolute top-4 right-4 text-white/80 hover:text-white bg-white/10 hover:bg-white/20 w-10 h-10 rounded-full flex items-center justify-center transition cursor-pointer">
-      <i class="fa-solid fa-xmark text-xl"></i>
-    </button>
-    <img id="lightboxImg" src="" alt="附件預覽" class="max-w-full max-h-[90vh] rounded-xl shadow-2xl object-contain">
+  <!-- ==================== 6. 圖片燈箱預覽 Modal (支援旋轉與縮放) ==================== -->
+  <div id="lightboxModal" onclick="closeLightbox(event)" class="fixed inset-0 bg-slate-950/92 z-50 hidden flex flex-col items-center justify-center p-4 select-none">
+    <!-- 頂部浮動控制列 -->
+    <div onclick="event.stopPropagation()" class="fixed top-4 left-1/2 -translate-x-1/2 z-50 flex items-center gap-1.5 sm:gap-2 bg-slate-900/90 backdrop-blur-md border border-white/15 px-3 py-2 rounded-2xl shadow-2xl text-white">
+      <button type="button" onclick="rotateLightbox(-90)"
+        class="px-2.5 py-1.5 rounded-xl bg-white/10 hover:bg-teal-600 text-xs font-bold flex items-center gap-1.5 transition cursor-pointer"
+        title="向左旋轉 90 度">
+        <i class="fa-solid fa-rotate-left"></i>
+        <span class="hidden sm:inline">向左轉</span>
+      </button>
+
+      <button type="button" onclick="rotateLightbox(90)"
+        class="px-2.5 py-1.5 rounded-xl bg-white/10 hover:bg-teal-600 text-xs font-bold flex items-center gap-1.5 transition cursor-pointer"
+        title="向右旋轉 90 度">
+        <i class="fa-solid fa-rotate-right"></i>
+        <span class="hidden sm:inline">向右轉</span>
+      </button>
+
+      <div class="w-px h-5 bg-white/20 mx-0.5"></div>
+
+      <button type="button" onclick="zoomLightbox(-0.25)"
+        class="w-8 h-8 rounded-xl bg-white/10 hover:bg-white/20 text-xs font-bold flex items-center justify-center transition cursor-pointer"
+        title="縮小">
+        <i class="fa-solid fa-magnifying-glass-minus"></i>
+      </button>
+
+      <span id="lightboxZoomLabel" class="text-xs font-mono font-bold px-1.5 min-w-[46px] text-center text-teal-300">100%</span>
+
+      <button type="button" onclick="zoomLightbox(0.25)"
+        class="w-8 h-8 rounded-xl bg-white/10 hover:bg-white/20 text-xs font-bold flex items-center justify-center transition cursor-pointer"
+        title="放大">
+        <i class="fa-solid fa-magnifying-glass-plus"></i>
+      </button>
+
+      <button type="button" onclick="resetLightboxTransform()"
+        class="px-2.5 py-1.5 rounded-xl bg-white/10 hover:bg-white/20 text-xs font-bold transition cursor-pointer"
+        title="重設角度與縮放">
+        還原
+      </button>
+
+      <div class="w-px h-5 bg-white/20 mx-0.5"></div>
+
+      <button type="button" onclick="closeLightbox(event, true)"
+        class="w-8 h-8 rounded-xl bg-rose-600/80 hover:bg-rose-600 text-white flex items-center justify-center transition cursor-pointer"
+        title="關閉預覽">
+        <i class="fa-solid fa-xmark text-base"></i>
+      </button>
+    </div>
+
+    <!-- 圖片顯示畫布 -->
+    <div onclick="closeLightbox(event)" class="w-full h-full flex items-center justify-center overflow-hidden pt-12">
+      <img id="lightboxImg" src="" alt="附件預覽" onclick="event.stopPropagation()"
+        class="rounded-xl shadow-2xl object-contain transition-transform duration-200 ease-out"
+        style="max-width: 88vw; max-height: 82vh;">
+    </div>
   </div>
 
   <!-- ==================== 7. 主管專用：子類別與催繳快選管理 Modal ==================== -->
@@ -867,6 +917,8 @@
     let existingImageUrls = [];
     let newCompressedImages = [];
     let editingOriginalAmount = 0;
+    let lightboxRotation = 0;
+    let lightboxScale = 1;
 
     // 報表與 Excel 匯入暫存
     let parsedUnbilledRecords = [];
@@ -3092,14 +3144,51 @@
     }
 
     function openLightbox(url) {
-      document.getElementById('lightboxImg').src = url;
+      lightboxRotation = 0;
+      lightboxScale = 1;
+      const img = document.getElementById('lightboxImg');
+      img.src = url;
+      applyLightboxTransform();
       document.getElementById('lightboxModal').classList.remove('hidden');
     }
 
+    function rotateLightbox(deltaDeg) {
+      lightboxRotation = (lightboxRotation + deltaDeg) % 360;
+      applyLightboxTransform();
+    }
+
+    function zoomLightbox(deltaScale) {
+      lightboxScale = Math.min(3, Math.max(0.5, Number((lightboxScale + deltaScale).toFixed(2))));
+      applyLightboxTransform();
+    }
+
+    function resetLightboxTransform() {
+      lightboxRotation = 0;
+      lightboxScale = 1;
+      applyLightboxTransform();
+    }
+
+    function applyLightboxTransform() {
+      const img = document.getElementById('lightboxImg');
+      const zoomLabel = document.getElementById('lightboxZoomLabel');
+      if (!img) return;
+
+      const isSideways = Math.abs(lightboxRotation % 180) === 90;
+      img.style.maxWidth = isSideways ? '80vh' : '88vw';
+      img.style.maxHeight = isSideways ? '86vw' : '82vh';
+      img.style.transform = `rotate(${lightboxRotation}deg) scale(${lightboxScale})`;
+
+      if (zoomLabel) {
+        zoomLabel.textContent = `${Math.round(lightboxScale * 100)}%`;
+      }
+    }
+
     function closeLightbox(event, force = false) {
-      if (force || event.target.id === 'lightboxModal') {
+      if (force || event.target.id === 'lightboxModal' || event.target === event.currentTarget) {
         document.getElementById('lightboxModal').classList.add('hidden');
-        document.getElementById('lightboxImg').src = '';
+        const img = document.getElementById('lightboxImg');
+        img.src = '';
+        img.style.transform = '';
       }
     }
 
