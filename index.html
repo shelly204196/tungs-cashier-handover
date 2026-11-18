@@ -7,6 +7,7 @@
   <script src="https://cdn.tailwindcss.com"></script>
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
   <script src="https://cdn.sheetjs.com/xlsx-0.20.3/package/dist/xlsx.full.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
   <style>
     @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Noto+Sans+TC:wght@400;500;600;700;800&display=swap');
 
@@ -2087,7 +2088,7 @@
         const buf = e.target.result;
         if (isExcel && typeof XLSX !== 'undefined') {
           currentImportSourceType = 'excel';
-          loadAndParseExcelWorkbook(buf);
+          await loadAndParseExcelWorkbook(buf);
         } else {
           currentImportSourceType = 'rpt';
           document.getElementById('excelSheetSelectorWrapper').classList.add('hidden');
@@ -2107,35 +2108,93 @@
       readerBuffer.readAsArrayBuffer(file);
     }
 
-    function loadAndParseExcelWorkbook(arrayBuffer) {
+    // 透過 JSZip 直接讀取 .xlsx 內部的 xl/styles.xml 與 worksheet XML，100% 精準解析儲存格刪除線 (<strike/>)
+    async function extractExcelStrikethroughMap(arrayBuffer) {
+      const strikeMap = {};
+      if (typeof JSZip === 'undefined') return strikeMap;
       try {
-        currentExcelWorkbook = XLSX.read(arrayBuffer, { type: 'array', cellDates: false, cellStyles: true });
-        currentExcelStrikeMap = {};
+        const zip = await JSZip.loadAsync(arrayBuffer);
+        const stylesFile = zip.file('xl/styles.xml');
+        const wbFile = zip.file('xl/workbook.xml');
+        const relsFile = zip.file('xl/_rels/workbook.xml.rels');
+        if (!stylesFile || !wbFile || !relsFile) return strikeMap;
+
+        const parser = new DOMParser();
+
+        // 1. 解析 styles.xml 找出哪些 fontId 帶有 <strike/>，以及哪些 cellXfs (s index) 使用這些 fontId
+        const stylesDoc = parser.parseFromString(await stylesFile.async('text'), 'application/xml');
+        const strikeFontIds = new Set();
+        const fonts = stylesDoc.getElementsByTagName('font');
+        for (let i = 0; i < fonts.length; i++) {
+          if (fonts[i].getElementsByTagName('strike').length > 0) {
+            strikeFontIds.add(i);
+          }
+        }
+
+        const strikeXfIndices = new Set();
+        const cellXfsNode = stylesDoc.getElementsByTagName('cellXfs')[0];
+        if (cellXfsNode) {
+          const xfs = cellXfsNode.getElementsByTagName('xf');
+          for (let i = 0; i < xfs.length; i++) {
+            const fontId = parseInt(xfs[i].getAttribute('fontId') || '-1', 10);
+            if (strikeFontIds.has(fontId)) {
+              strikeXfIndices.add(i);
+            }
+          }
+        }
+
+        // 2. 對應 workbook.xml 的工作表名稱與實際 worksheet XML 檔案路徑
+        const relsDoc = parser.parseFromString(await relsFile.async('text'), 'application/xml');
+        const rIdToTarget = {};
+        const rels = relsDoc.getElementsByTagName('Relationship');
+        for (let i = 0; i < rels.length; i++) {
+          const id = rels[i].getAttribute('Id');
+          let target = rels[i].getAttribute('Target') || '';
+          if (target.startsWith('/')) target = target.slice(1);
+          else if (!target.startsWith('xl/')) target = 'xl/' + target;
+          rIdToTarget[id] = target;
+        }
+
+        const wbDoc = parser.parseFromString(await wbFile.async('text'), 'application/xml');
+        const sheets = wbDoc.getElementsByTagName('sheet');
+        for (let i = 0; i < sheets.length; i++) {
+          const sheetName = sheets[i].getAttribute('name');
+          const rId = sheets[i].getAttribute('r:id') || sheets[i].getAttributeNS('http://schemas.openxmlformats.org/officeDocument/2006/relationships', 'id');
+          const sheetPath = rIdToTarget[rId];
+          const struckRows = new Set();
+
+          if (sheetPath && zip.file(sheetPath) && strikeXfIndices.size > 0) {
+            const sheetDoc = parser.parseFromString(await zip.file(sheetPath).async('text'), 'application/xml');
+            const cells = sheetDoc.getElementsByTagName('c');
+            for (let cIdx = 0; cIdx < cells.length; cIdx++) {
+              const sAttr = cells[cIdx].getAttribute('s');
+              if (sAttr !== null && strikeXfIndices.has(parseInt(sAttr, 10))) {
+                const ref = cells[cIdx].getAttribute('r') || '';
+                const m = ref.match(/^([A-Z]+)(\d+)$/);
+                if (m && ['A', 'B', 'C', 'D', 'E'].includes(m[1])) {
+                  struckRows.add(parseInt(m[2], 10));
+                }
+              }
+            }
+          }
+          strikeMap[sheetName] = struckRows;
+        }
+      } catch (e) {
+        console.warn('XML strike parse skipped:', e);
+      }
+      return strikeMap;
+    }
+
+    async function loadAndParseExcelWorkbook(arrayBuffer) {
+      try {
+        currentExcelWorkbook = XLSX.read(arrayBuffer, { type: 'array', cellDates: false });
+        currentExcelStrikeMap = await extractExcelStrikethroughMap(arrayBuffer);
 
         const sheetNames = currentExcelWorkbook.SheetNames || [];
         if (sheetNames.length === 0) {
           showToast('Excel 檔案內找不到任何工作表分頁', 'error');
           return;
         }
-
-        // 透過 SheetJS cellStyles 直接偵測 B/C/E 欄是否有刪除線 (s.font.strike)
-        sheetNames.forEach(sName => {
-          const ws = currentExcelWorkbook.Sheets[sName];
-          const struckRows = new Set();
-          if (ws) {
-            Object.keys(ws).forEach(addr => {
-              if (addr.startsWith('!')) return;
-              const colMatch = addr.match(/^([A-Z]+)(\d+)$/);
-              if (colMatch && ['B', 'C', 'E'].includes(colMatch[1])) {
-                const cell = ws[addr];
-                if (cell && cell.s && cell.s.font && cell.s.font.strike) {
-                  struckRows.add(parseInt(colMatch[2], 10));
-                }
-              }
-            });
-          }
-          currentExcelStrikeMap[sName] = struckRows;
-        });
 
         const sheetSelectWrapper = document.getElementById('excelSheetSelectorWrapper');
         const sheetSelect = document.getElementById('excelSheetSelect');
@@ -2159,12 +2218,19 @@
     function handleExcelSheetChange() {
       const sheetName = document.getElementById('excelSheetSelect').value;
       if (sheetName && currentExcelWorkbook) {
+        document.getElementById('unbilledModalSearch').value = '';
         parseSelectedExcelSheet(sheetName);
+        const tableContainer = document.getElementById('unbilledPreviewBody')?.closest('.overflow-x-auto');
+        if (tableContainer) tableContainer.scrollTop = 0;
+        showToast(`已切換至分頁「${sheetName}」`, 'info');
       }
     }
 
     function formatExcelCellDate(rawVal, fallbackYear = 2026) {
       if (rawVal === null || rawVal === undefined || rawVal === '') return '';
+      if (rawVal instanceof Date && !isNaN(rawVal.getTime())) {
+        return `${rawVal.getFullYear()}/${String(rawVal.getMonth() + 1).padStart(2, '0')}/${String(rawVal.getDate()).padStart(2, '0')}`;
+      }
       if (typeof rawVal === 'number' && rawVal > 20000 && rawVal < 80000) {
         const utcDays = Math.floor(rawVal - 25569);
         const d = new Date(utcDays * 86400 * 1000);
@@ -2177,6 +2243,11 @@
       if (ymd) {
         return `${ymd[1]}/${ymd[2].padStart(2, '0')}/${ymd[3].padStart(2, '0')}`;
       }
+      const mdy2 = str.match(/^(\d{1,2})[\/\-](\d{1,2})[\/\-](\d{2})$/);
+      if (mdy2) {
+        const fullY = 2000 + parseInt(mdy2[3], 10);
+        return `${fullY}/${mdy2[1].padStart(2, '0')}/${mdy2[2].padStart(2, '0')}`;
+      }
       const md = str.match(/^(\d{1,2})[\/\-](\d{1,2})$/);
       if (md) {
         return `${fallbackYear}/${md[1].padStart(2, '0')}/${md[2].padStart(2, '0')}`;
@@ -2188,11 +2259,13 @@
       const ws = currentExcelWorkbook.Sheets[sheetName];
       if (!ws) return;
 
-      const rows = XLSX.utils.sheet_to_json(ws, { header: 1, defval: '' });
+      // 使用 raw: true 確保日期儲存格取得原始 Excel 序列值（如 46235 -> 2026/08/01）
+      const rows = XLSX.utils.sheet_to_json(ws, { header: 1, raw: true, defval: '' });
       const struckRowsSet = currentExcelStrikeMap[sheetName] || new Set();
 
-      const yearMatch = String(sheetName).match(/(20\d{2})/);
-      const defaultYear = yearMatch ? parseInt(yearMatch[1], 10) : new Date().getFullYear();
+      const ymMatch = String(sheetName).match(/(20\d{2})[\.\-\/](\d{1,2})/);
+      const defaultYear = ymMatch ? parseInt(ymMatch[1], 10) : new Date().getFullYear();
+      const defaultMonth = ymMatch ? String(ymMatch[2]).padStart(2, '0') : String(new Date().getMonth() + 1).padStart(2, '0');
 
       const existingKeySet = new Set();
       arrearsData.forEach(r => {
@@ -2201,7 +2274,7 @@
         if (dStr && pid) existingKeySet.add(`${dStr}_${pid}`);
       });
 
-      let currentInheritedDate = formatDisplayDate(getTodayISO());
+      let currentInheritedDate = `${defaultYear}/${defaultMonth}/01`;
       const results = [];
 
       for (let i = 0; i < rows.length; i++) {
