@@ -59,17 +59,17 @@
 </head>
 <body class="min-h-screen flex flex-col bg-[#f4f7f6] text-slate-800 antialiased">
 
-  <!-- ==================== 1. 雙重驗證登入畫面 ==================== -->
-  <div id="loginView" class="flex-1 flex items-center justify-center p-4 bg-gradient-to-br from-[#0f5c52] via-[#136f63] to-slate-900">
-    <div class="bg-white rounded-3xl shadow-2xl w-full max-w-md overflow-hidden border border-teal-100/30">
-      <div class="bg-gradient-to-r from-[#0f5c52] to-[#147467] px-6 py-7 text-center text-white relative">
-        <div class="w-16 h-16 mx-auto mb-3 bg-white rounded-2xl flex items-center justify-center shadow-lg border-2 border-teal-200/60 overflow-hidden">
+  <!-- ==================== 1. 登入畫面 ==================== -->
+  <div id="loginView" class="min-h-screen flex items-center justify-center p-4 bg-gradient-to-br from-[#0c4a42] via-[#0f5c52] to-slate-900">
+    <div class="bg-white rounded-3xl shadow-2xl w-full max-w-md overflow-hidden border border-teal-100/20">
+      <div class="bg-[#0f5c52] px-6 py-7 text-center text-white">
+        <div class="w-16 h-16 bg-white rounded-2xl flex items-center justify-center mx-auto mb-3.5 shadow-lg border-2 border-teal-300/40 overflow-hidden">
           <img src="https://lh3.googleusercontent.com/d/1ss6M3mIsixuq0QHM_wDIb9c_uPg1FD6q"
             alt="童綜合醫院批價課 LOGO"
             referrerpolicy="no-referrer"
             onerror="if(!this.dataset.triedThumb){this.dataset.triedThumb='1';this.src='https://drive.google.com/thumbnail?id=1ss6M3mIsixuq0QHM_wDIb9c_uPg1FD6q&sz=w400';}else{this.style.display='none';this.nextElementSibling.classList.remove('hidden');}"
             class="w-16 h-16 rounded-2xl object-cover">
-          <div class="hidden w-16 h-16 rounded-2xl bg-[#0f5c52] text-white font-extrabold text-sm flex items-center justify-center tracking-widest">批價</div>
+          <div class="hidden w-16 h-16 rounded-2xl bg-[#0f5c52] text-white font-extrabold text-xl flex items-center justify-center tracking-widest">批價</div>
         </div>
         <p class="text-xs font-bold tracking-widest text-teal-200 uppercase">TUNG'S TAICHUNG METROHARBOR HOSPITAL</p>
         <h1 class="text-xl font-extrabold mt-1 tracking-tight">童綜合醫院 · 批價課</h1>
@@ -239,9 +239,9 @@
     </header>
 
     <main class="flex-1 max-w-6xl w-full mx-auto px-4 py-5 space-y-3.5">
-      <!-- 頂部工具列：狀態切換 / 排序 / 匯入與新增 -->
-      <div class="bg-white p-3.5 sm:p-4 rounded-2xl shadow-sm border border-slate-200 flex flex-col lg:flex-row justify-between items-stretch lg:items-center gap-3">
-        <div class="flex flex-wrap items-center gap-2.5">
+      <!-- 頂部工具列：單一橫列整合狀態切換 / 排序 / 新增與匯入匯出 -->
+      <div class="bg-white p-3.5 sm:p-4 rounded-2xl shadow-sm border border-slate-200 flex flex-col sm:flex-row justify-between items-stretch sm:items-center gap-2.5">
+        <div class="flex flex-wrap items-center gap-2">
           <div id="statusFilterWrapper" class="hidden flex items-center bg-slate-100 p-1 rounded-xl border border-slate-200 shrink-0">
             <button onclick="setArrearsFilter('未結案')" id="filterUnresolved"
               class="px-3 py-1.5 rounded-lg text-xs font-bold bg-white text-teal-800 shadow-sm transition cursor-pointer">
@@ -259,7 +259,7 @@
 
           <div class="relative shrink-0">
             <select id="dateSortOrder" onchange="renderCurrentTab()"
-              class="w-full sm:w-auto px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs sm:text-sm font-semibold text-slate-700 focus:outline-none focus:ring-2 focus:ring-teal-600 focus:bg-white transition cursor-pointer">
+              class="px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs sm:text-sm font-semibold text-slate-700 focus:outline-none focus:ring-2 focus:ring-teal-600 focus:bg-white transition cursor-pointer">
               <option value="desc">最新交班日期優先</option>
               <option value="asc">最舊交班日期優先</option>
               <option value="amount_desc">待處理金額高到低</option>
@@ -273,26 +273,25 @@
           </div>
         </div>
 
-        <div class="flex flex-wrap items-center gap-2 shrink-0">
-          <!-- 匯入看診未批報表按鈕（僅費用/追蹤分頁顯示） -->
-          <button id="importUnbilledBtn" onclick="openUnbilledImportModal()"
-            class="hidden bg-orange-600 hover:bg-orange-700 active:bg-orange-800 text-white px-3.5 py-2.5 rounded-xl text-xs sm:text-sm font-bold shadow-sm flex items-center justify-center gap-1.5 transition cursor-pointer"
-            title="匯入主管篩選後的看診未批 Excel (.xlsx) 或醫院原始報表 (.rpt)">
-            <i class="fa-solid fa-file-import"></i>
-            <span>匯入看診未批報表</span>
-          </button>
-
-          <button onclick="exportCurrentTabCSV()"
-            class="bg-slate-100 hover:bg-slate-200 active:bg-slate-300 text-slate-700 border border-slate-200 px-3.5 py-2.5 rounded-xl text-xs sm:text-sm font-bold flex items-center justify-center gap-1.5 transition cursor-pointer"
-            title="依目前篩選與排序條件匯出 Excel CSV 報表">
-            <i class="fa-solid fa-file-export text-teal-700"></i>
-            <span>匯出報表</span>
-          </button>
-
+        <div class="flex items-center gap-2 shrink-0">
           <button onclick="openFormModal()"
-            class="flex-1 sm:flex-initial bg-[#0f5c52] hover:bg-[#0c4a42] active:bg-teal-950 text-white px-4 py-2.5 rounded-xl text-sm font-bold shadow-sm flex items-center justify-center gap-2 transition cursor-pointer">
+            class="flex-1 sm:flex-initial bg-[#0f5c52] hover:bg-[#0c4a42] active:bg-teal-950 text-white px-4 py-2.5 rounded-xl text-sm font-bold shadow-sm flex items-center justify-center gap-2 transition cursor-pointer whitespace-nowrap">
             <i class="fa-solid fa-plus"></i>
             <span id="addBtnText">新增一般交班</span>
+          </button>
+
+          <!-- 匯入看診未批報表 ICON 按鈕（僅費用/追蹤分頁顯示） -->
+          <button id="importUnbilledBtn" onclick="openUnbilledImportModal()"
+            class="hidden w-10 h-10 bg-orange-600 hover:bg-orange-700 active:bg-orange-800 text-white rounded-xl text-base font-bold shadow-sm inline-flex items-center justify-center shrink-0 transition cursor-pointer"
+            title="匯入看診未批報表（Excel / rgnotoc）" aria-label="匯入看診未批報表">
+            <i class="fa-solid fa-file-arrow-up"></i>
+          </button>
+
+          <!-- 匯出 Excel CSV 報表 ICON 按鈕 -->
+          <button onclick="exportCurrentTabCSV()"
+            class="w-10 h-10 bg-slate-100 hover:bg-emerald-50 active:bg-emerald-100 text-emerald-700 border border-slate-200 hover:border-emerald-300 rounded-xl text-base font-bold inline-flex items-center justify-center shrink-0 transition cursor-pointer"
+            title="匯出目前列表為 Excel CSV 報表" aria-label="匯出報表">
+            <i class="fa-solid fa-file-excel"></i>
           </button>
         </div>
       </div>
@@ -541,13 +540,17 @@
             placeholder="請詳細說明原因、約定繳款/退費日期與處理進度（可直接按 Ctrl+V 貼上截圖）..."></textarea>
         </div>
 
-        <div id="supervisorNoteGroup" class="hidden bg-amber-50 border border-amber-300 p-3.5 rounded-xl">
-          <label class="block text-xs font-bold text-amber-900 mb-1">
+        <div id="supervisorNoteGroup" class="hidden bg-amber-50 border border-amber-300 p-3.5 rounded-xl space-y-2">
+          <label class="block text-xs font-bold text-amber-900">
             <i class="fa-solid fa-crown text-amber-600 mr-1"></i>主管專用註記（僅主管權限可新增與編輯）
           </label>
           <input type="text" id="arrSupervisorNote"
             class="w-full px-3 py-2 border border-amber-300 bg-white rounded-xl text-sm text-amber-950 focus:ring-2 focus:ring-amber-500 focus:outline-none"
-            placeholder="輸入主管指示或內部追蹤註記...">
+            placeholder="輸入針對此個案的主管指示（如：不寄信/查無此人、分期個案）...">
+          <label id="syncPatientNoteWrapper" class="hidden flex items-center gap-2 text-xs font-bold text-amber-900 pt-1 cursor-pointer select-none">
+            <input type="checkbox" id="arrSyncPatientNote" checked class="rounded text-amber-600 focus:ring-amber-500 cursor-pointer">
+            <span id="syncPatientNoteLabel">一併註記於此個案的所有未結案紀錄</span>
+          </label>
         </div>
 
         <div>
@@ -1960,13 +1963,26 @@
         return;
       }
 
+      // 建立「同病歷號（個案）」主管專用註記索引：只要同病歷號任一筆有主管註記，該病人所有未結案卡片自動繼承顯示
+      const patientSupervisorNoteMap = {};
+      arrearsData.forEach(row => {
+        const pid = String(row['病歷號'] || '').trim();
+        const note = String(row['主管專用註記'] || '').trim();
+        if (pid && note && !patientSupervisorNoteMap[pid]) {
+          patientSupervisorNoteMap[pid] = note;
+        }
+      });
+
       container.innerHTML = filtered.map(r => {
         const status = String(r['狀態'] || '未結案').trim();
         const isResolved = status === '已結清';
         const parsedCat = parseCategoryField(r['追蹤類別']);
         const payMethod = String(r['原支付方式'] || '').trim();
         const amount = Number(r['欠費金額']) || 0;
-        const supervisorNote = String(r['主管專用註記'] || '').trim();
+        const pid = String(r['病歷號'] || '').trim();
+        const directSupervisorNote = String(r['主管專用註記'] || '').trim();
+        const inheritedNote = (!isResolved && !directSupervisorNote && pid && patientSupervisorNoteMap[pid]) ? patientSupervisorNoteMap[pid] : '';
+        const supervisorNote = directSupervisorNote || inheritedNote;
         const style = getCategoryStyle(parsedCat.main);
         const imgGrid = renderAttachmentsBlock(r['圖片']);
         const historyLines = String(r['異動歷程'] || '').split('\n').map(s => s.trim()).filter(Boolean);
@@ -1993,11 +2009,11 @@
           }
         }
 
-        const supervisorHtml = supervisorNote ? `
-          <div class="mb-3 px-3.5 py-2.5 rounded-xl bg-amber-50 border border-amber-300 text-amber-950 text-xs font-bold flex items-start gap-2">
-            <i class="fa-solid fa-crown text-amber-600 mt-0.5 shrink-0"></i>
-            <div>主管專用註記：${escapeHtml(supervisorNote)}</div>
-          </div>` : '';
+        const supervisorBadgeHtml = supervisorNote ? `
+          <span class="inline-flex items-center gap-1 px-2.5 py-1 rounded-xl bg-amber-50 border border-amber-300 text-amber-900 text-xs font-bold shadow-2xs" title="主管專用註記">
+            <i class="fa-solid fa-crown text-amber-600 text-[11px]"></i>
+            <span>${escapeHtml(supervisorNote)}</span>
+          </span>` : '';
 
         const historyHtml = historyLines.length > 0 ? `
           <details class="mt-3 pt-2.5 border-t border-slate-100 text-xs">
@@ -2031,49 +2047,49 @@
                 ${collectionBadgesHtml}
 
                 <span class="font-bold text-slate-800 text-sm">
-                  病歷號：${escapeHtml(r['病歷號'] || '')} ・ ${escapeHtml(r['病人姓名'] || '')}
-                </span>
-
+                <!-- 金額顯示 -->
                 <span class="px-2.5 py-0.5 rounded-lg bg-slate-100 font-extrabold text-sm ${isResolved ? 'text-slate-500 line-through' : style.amountText}">
                   $${amount.toLocaleString()}
                 </span>
               </div>
 
-              <div class="flex flex-wrap items-center gap-1.5">
-                ${!isResolved && Number(r.rowIndex) > 1 ? `
-                  <button onclick="openCollectionModal(${Number(r.rowIndex)}, 'call')"
-                    class="px-2.5 py-1.5 rounded-xl bg-indigo-50 hover:bg-indigo-100 text-indigo-700 border border-indigo-200 text-xs font-bold transition flex items-center gap-1 cursor-pointer"
-                    title="快速紀錄催款電話">
-                    <i class="fa-solid fa-phone-volume"></i>
-                    <span>催款電話</span>
-                  </button>
-                  <button onclick="openCollectionModal(${Number(r.rowIndex)}, 'letter')"
-                    class="px-2.5 py-1.5 rounded-xl bg-purple-50 hover:bg-purple-100 text-purple-700 border border-purple-200 text-xs font-bold transition flex items-center gap-1 cursor-pointer"
-                    title="快速紀錄催繳信寄發">
-                    <i class="fa-solid fa-envelope"></i>
-                    <span>催繳信</span>
-                  </button>
-                  <button onclick="openEditArrearsModal(${Number(r.rowIndex)})"
-                    class="px-3 py-1.5 rounded-xl bg-slate-100 hover:bg-teal-50 text-slate-700 hover:text-teal-800 border border-slate-200 text-xs font-bold transition flex items-center gap-1.5 cursor-pointer">
-                    <i class="fa-solid fa-pen-to-square"></i>
-                    <span>更新／沖銷</span>
-                  </button>
-                  <button onclick="openResolveModal(${Number(r.rowIndex)})"
-                    class="px-3 py-1.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold transition flex items-center gap-1.5 shadow-sm cursor-pointer">
-                    <i class="fa-solid fa-check"></i>
-                    <span>標記已結案</span>
-                  </button>` : ''}
-                ${currentStaff.isSupervisor && Number(r.rowIndex) > 1 ? `
-                  <button onclick="openDeleteRecordModal('arrears', ${Number(r.rowIndex)})"
-                    class="px-2.5 py-1.5 rounded-xl bg-rose-50 hover:bg-rose-100 text-rose-700 border border-rose-200 text-xs font-bold transition flex items-center gap-1 cursor-pointer"
-                    title="主管權限：刪除作廢（雲端仍保留稽核紀錄）">
-                    <i class="fa-solid fa-trash-can"></i>
-                    <span>刪除</span>
-                  </button>` : ''}
+              <div class="w-full flex flex-wrap items-center justify-between gap-2 pt-2 border-t border-slate-100/80">
+                <div class="flex flex-wrap items-center gap-1.5">
+                  ${!isResolved && Number(r.rowIndex) > 1 ? `
+                    <button onclick="openEditArrearsModal(${Number(r.rowIndex)})"
+                      class="px-3 py-1.5 rounded-xl bg-slate-100 hover:bg-teal-50 text-slate-700 hover:text-teal-800 border border-slate-200 text-xs font-bold transition flex items-center gap-1.5 cursor-pointer">
+                      <i class="fa-solid fa-pen-to-square"></i>
+                      <span>更新／沖銷</span>
+                    </button>
+                    <button onclick="openCollectionModal(${Number(r.rowIndex)}, 'call')"
+                      class="w-8 h-8 rounded-xl bg-indigo-50 hover:bg-indigo-100 text-indigo-700 border border-indigo-200 text-xs font-bold transition inline-flex items-center justify-center cursor-pointer"
+                      title="快速紀錄催款電話" aria-label="紀錄催款電話">
+                      <i class="fa-solid fa-phone-volume"></i>
+                    </button>
+                    <button onclick="openCollectionModal(${Number(r.rowIndex)}, 'letter')"
+                      class="w-8 h-8 rounded-xl bg-purple-50 hover:bg-purple-100 text-purple-700 border border-purple-200 text-xs font-bold transition inline-flex items-center justify-center cursor-pointer"
+                      title="快速紀錄催繳信寄發" aria-label="紀錄催繳信">
+                      <i class="fa-solid fa-envelope"></i>
+                    </button>` : ''}
+                </div>
+
+                <div class="flex flex-wrap items-center gap-1.5 ml-auto">
+                  ${supervisorBadgeHtml}
+                  ${!isResolved && Number(r.rowIndex) > 1 ? `
+                    <button onclick="openResolveModal(${Number(r.rowIndex)})"
+                      class="px-3 py-1.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold transition flex items-center gap-1.5 shadow-sm cursor-pointer">
+                      <i class="fa-solid fa-check"></i>
+                      <span>標記已結案</span>
+                    </button>` : ''}
+                  ${currentStaff.isSupervisor && Number(r.rowIndex) > 1 ? `
+                    <button onclick="openDeleteRecordModal('arrears', ${Number(r.rowIndex)})"
+                      class="w-8 h-8 rounded-xl bg-rose-50 hover:bg-rose-100 text-rose-700 border border-rose-200 text-xs font-bold transition inline-flex items-center justify-center cursor-pointer"
+                      title="主管權限：刪除作廢（雲端仍保留稽核紀錄）" aria-label="刪除作廢">
+                      <i class="fa-solid fa-trash-can"></i>
+                    </button>` : ''}
+                </div>
               </div>
             </div>
-
-            ${supervisorHtml}
 
             <div class="text-sm text-slate-800 whitespace-pre-line leading-relaxed break-words">${escapeHtml(r['欠費說明與進度'] || '')}</div>
 
@@ -2876,6 +2892,9 @@
         editingOriginalAmount = 0;
 
         document.getElementById('supervisorNoteGroup').classList.toggle('hidden', !currentStaff.isSupervisor);
+        document.getElementById('syncPatientNoteWrapper').classList.remove('hidden');
+        document.getElementById('arrSyncPatientNote').checked = true;
+        document.getElementById('syncPatientNoteLabel').textContent = '一併註記於此個案的所有未結案紀錄';
         handleMainCategoryChange();
         renderModalPreviews('arrears');
         document.getElementById('arrearsModal').classList.remove('hidden');
@@ -2932,10 +2951,23 @@
       document.getElementById('origAmtHint').textContent = editingOriginalAmount.toLocaleString();
       document.getElementById('paidAmountGroup').classList.remove('hidden');
       document.getElementById('arrContent').value = item['欠費說明與進度'] || '';
-      document.getElementById('arrSupervisorNote').value = item['主管專用註記'] || '';
+      const pid = String(item['病歷號'] || '').trim();
+      const samePatientUnresolved = pid
+        ? arrearsData.filter(r => String(r['病歷號'] || '').trim() === pid && String(r['狀態'] || '未結案').trim() !== '已結清')
+        : [];
+      const fallbackNote = samePatientUnresolved.map(r => String(r['主管專用註記'] || '').trim()).find(Boolean) || '';
+      document.getElementById('arrSupervisorNote').value = item['主管專用註記'] || fallbackNote;
       document.getElementById('arrFileInput').value = '';
 
       document.getElementById('supervisorNoteGroup').classList.toggle('hidden', !currentStaff.isSupervisor);
+      const syncWrap = document.getElementById('syncPatientNoteWrapper');
+      if (currentStaff.isSupervisor && samePatientUnresolved.length > 1) {
+        syncWrap.classList.remove('hidden');
+        document.getElementById('arrSyncPatientNote').checked = true;
+        document.getElementById('syncPatientNoteLabel').textContent = `一併註記於此個案（${pid}）的所有未結案紀錄（共 ${samePatientUnresolved.length} 筆）`;
+      } else {
+        syncWrap.classList.add('hidden');
+      }
       handleMainCategoryChange(true);
       renderModalPreviews('arrears');
       document.getElementById('arrearsModal').classList.remove('hidden');
@@ -3470,6 +3502,7 @@
       const paidAmount = Number(document.getElementById('arrPaidAmount').value) || 0;
       const content = document.getElementById('arrContent').value.trim();
       const supervisorNote = currentStaff.isSupervisor ? document.getElementById('arrSupervisorNote').value.trim() : '';
+      const syncSupervisorNoteToPatient = currentStaff.isSupervisor && Boolean(document.getElementById('arrSyncPatientNote')?.checked);
 
       if (!patientId || !patientName || !handoverDate || !content || isNaN(amount)) {
         showToast('請完整填寫病歷號、病人姓名、日期、金額與說明', 'error');
@@ -3498,7 +3531,8 @@
           author,
           category,
           payMethod,
-          supervisorNote
+          supervisorNote,
+          syncSupervisorNoteToPatient
         } : {
           pwd: currentPwd,
           pass: currentPass,
@@ -3512,7 +3546,8 @@
           author,
           category,
           payMethod,
-          supervisorNote
+          supervisorNote,
+          syncSupervisorNoteToPatient
         };
 
         const json = await postToGas(payload);
