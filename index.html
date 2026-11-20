@@ -534,10 +534,43 @@
         </div>
 
         <div>
-          <label class="block text-xs font-bold text-slate-700 mb-1">欠費／追蹤說明與進度 <span class="text-rose-500">*</span></label>
-          <textarea id="arrContent" rows="4"
+          <div class="flex items-center justify-between mb-1">
+            <label id="arrBackgroundLabel" class="block text-xs font-bold text-slate-700">
+              <i class="fa-solid fa-file-lines text-teal-700 mr-1"></i>背景說明（首次建檔事由） <span class="text-rose-500">*</span>
+            </label>
+            <span id="arrBackgroundLockBadge" class="hidden px-2 py-0.5 rounded-md bg-slate-100 text-slate-500 border border-slate-200 text-[11px] font-bold">
+              <i class="fa-solid fa-lock mr-1"></i>原始背景僅主管可修改
+            </span>
+          </div>
+          <textarea id="arrBackgroundContent" rows="3"
             class="w-full px-3.5 py-2.5 border border-slate-300 rounded-xl text-sm leading-relaxed focus:ring-2 focus:ring-teal-600 focus:outline-none"
-            placeholder="請詳細說明原因、約定繳款/退費日期與處理進度（可直接按 Ctrl+V 貼上截圖）..."></textarea>
+            placeholder="請填寫首次建檔原因、就診科別、聯絡電話與當初溝通經過（可直接按 Ctrl+V 貼圖）..."></textarea>
+        </div>
+
+        <!-- 進度追蹤（第二次起歷程檢視 ＋ 空白補充新增） -->
+        <div id="arrProgressGroup" class="hidden bg-teal-50/50 border border-teal-200 p-3.5 rounded-xl space-y-2.5">
+          <div class="flex flex-wrap items-center justify-between gap-1">
+            <label class="block text-xs font-bold text-teal-900">
+              <i class="fa-solid fa-list-check text-teal-700 mr-1"></i>進度追蹤（累計紀錄與本次補充）
+            </label>
+            <span id="arrProgressAutoStampBadge" class="px-2.5 py-0.5 rounded-lg bg-white text-teal-800 border border-teal-300 text-[11px] font-bold">
+              <i class="fa-regular fa-clock mr-1"></i>存檔自動帶入時間與人員
+            </span>
+          </div>
+          <!-- 既有進度追蹤唯讀檢視區 -->
+          <div id="arrExistingProgressBox" class="hidden bg-white/90 border border-teal-200 rounded-xl p-3 space-y-1">
+            <div class="text-[11px] font-bold text-slate-400">先前已累計之追蹤進度：</div>
+            <div id="arrExistingProgressText" class="text-xs sm:text-sm text-slate-700 whitespace-pre-line leading-relaxed max-h-36 overflow-y-auto"></div>
+          </div>
+          <!-- 本次新增補充空白輸入框 -->
+          <div>
+            <label for="arrProgressAppendInput" class="block text-[11px] font-bold text-teal-800 mb-1">
+              本次新增追蹤進度（留空則僅更新金額／註記）：
+            </label>
+            <textarea id="arrProgressAppendInput" rows="3"
+              class="w-full px-3.5 py-2.5 border border-teal-300 bg-white rounded-xl text-sm leading-relaxed focus:ring-2 focus:ring-teal-600 focus:outline-none"
+              placeholder="請直接輸入本次聯繫結果或處理進度（送出後將自動加上今日日期、幾點幾分與您的姓名並累加於上方）..."></textarea>
+          </div>
         </div>
 
         <div id="supervisorNoteGroup" class="hidden bg-amber-50 border border-amber-300 p-3.5 rounded-xl space-y-2">
@@ -1002,15 +1035,6 @@
 
     let managerActiveTab = '欠費';
     let managerEditingIndex = -1;
-
-    function saveCustomGasUrl() {
-      const val = (document.getElementById('gasUrlInput')?.value || '').trim();
-      if (val) {
-        currentGasUrl = val;
-        localStorage.setItem(GAS_URL_STORAGE_KEY, val);
-        showToast('已更新後端 GAS 連線網址', 'info');
-      }
-    }
 
     function togglePassVisibility(inputId, btn) {
       const input = document.getElementById(inputId);
@@ -1656,23 +1680,42 @@
     function setCollectionFilter(filterKey) {
       arrearsCollectionFilter = filterKey;
       const styles = {
-        ALL: { id: 'colFilterAll', active: 'px-3 py-1 rounded-full text-xs font-bold bg-teal-700 text-white shadow-2xs transition cursor-pointer', inactive: 'px-3 py-1 rounded-full text-xs font-bold bg-white text-slate-600 border border-slate-200 hover:bg-slate-50 transition cursor-pointer' },
+        ALL: { id: 'colFilterAll', active: 'px-3 py-1 rounded-full text-xs font-bold bg-teal-700 text-white shadow-2xs transition cursor-pointer', inactive: 'px-3 py-1 rounded-full text-xs font-bold bg-slate-100 text-slate-700 border border-slate-200 hover:bg-slate-200 transition cursor-pointer' },
         NONE: { id: 'colFilterNone', active: 'px-3 py-1 rounded-full text-xs font-bold bg-amber-600 text-white shadow-2xs transition cursor-pointer', inactive: 'px-3 py-1 rounded-full text-xs font-bold bg-amber-50 text-amber-800 border border-amber-200 hover:bg-amber-100 transition cursor-pointer' },
         CALLED: { id: 'colFilterCalled', active: 'px-3 py-1 rounded-full text-xs font-bold bg-indigo-600 text-white shadow-2xs transition cursor-pointer', inactive: 'px-3 py-1 rounded-full text-xs font-bold bg-indigo-50 text-indigo-700 border border-indigo-200 hover:bg-indigo-100 transition cursor-pointer' },
         LETTER: { id: 'colFilterLetter', active: 'px-3 py-1 rounded-full text-xs font-bold bg-purple-600 text-white shadow-2xs transition cursor-pointer', inactive: 'px-3 py-1 rounded-full text-xs font-bold bg-purple-50 text-purple-700 border border-purple-200 hover:bg-purple-100 transition cursor-pointer' }
       };
-      Object.entries(styles).forEach(([key, cfg]) => {
+      Object.entries(styles).forEach(([k, cfg]) => {
         const el = document.getElementById(cfg.id);
-        if (el) el.className = (key === filterKey) ? cfg.active : cfg.inactive;
+        if (el) el.className = (k === filterKey) ? cfg.active : cfg.inactive;
       });
       renderCurrentTab();
+    }
+
+    // 自動拆分「背景說明（首次建檔）」與「進度追蹤（第二次起）」並向下相容舊資料【追蹤狀況】格式
+    function splitBackgroundAndProgress(row) {
+      const rawBg = String(row['欠費說明與進度'] || '').trim();
+      const explicitProgress = String(row['進度追蹤'] || '').trim();
+      if (explicitProgress) {
+        return { background: rawBg, progress: explicitProgress };
+      }
+      const markerRegex = /\n*\s*【追蹤狀況】\s*\n*/;
+      if (markerRegex.test(rawBg)) {
+        const parts = rawBg.split(markerRegex);
+        return {
+          background: parts[0].trim(),
+          progress: parts.slice(1).join('\n【追蹤狀況】\n').trim()
+        };
+      }
+      return { background: rawBg, progress: '' };
     }
 
     function analyzeCollectionStatus(row) {
       const explicitLog = String(row['催繳紀錄'] || '').trim();
       const desc = String(row['欠費說明與進度'] || '').trim();
+      const progress = String(row['進度追蹤'] || '').trim();
       const history = String(row['異動歷程'] || '').trim();
-      const combined = `${explicitLog}\n${desc}\n${history}`;
+      const combined = `${explicitLog}\n${desc}\n${progress}\n${history}`;
 
       let callCount = 0;
       let letterCount = 0;
@@ -1683,11 +1726,12 @@
       const explicitLetterMatches = combined.match(/✉️【催繳信/g);
       if (explicitLetterMatches) letterCount += explicitLetterMatches.length;
 
-      if (callCount === 0 && /(打PT|打給|去電|電PT|致電|電聯|手機|未接|轉語音|打兒子|打太太|打家屬|聯絡pt|聯絡病人|催款電話|已通知)/i.test(desc)) {
+      const textToScan = `${desc}\n${progress}`;
+      if (callCount === 0 && /(打PT|打給|去電|電PT|致電|電聯|手機|未接|轉語音|打兒子|打太太|打家屬|聯絡pt|聯絡病人|催款電話|已通知)/i.test(textToScan)) {
         callCount = 1;
       }
 
-      if (letterCount === 0 && /(寄信|催繳信|存證信函|查無此人|招領逾期)/i.test(desc)) {
+      if (letterCount === 0 && /(寄信|催繳信|存證信函|查無此人|招領逾期)/i.test(textToScan)) {
         letterCount = 1;
       }
 
@@ -1822,7 +1866,7 @@
         if (arrearsCollectionFilter === 'CALLED' && colInfo.callCount === 0) return false;
         if (arrearsCollectionFilter === 'LETTER' && colInfo.letterCount === 0) return false;
 
-        const text = `${r['編號'] || ''} ${parsedCat.main} ${parsedCat.sub} ${r['原支付方式'] || ''} ${r['病歷號'] || ''} ${r['病人姓名'] || ''} ${r['欠費說明與進度'] || ''} ${r['交班人'] || ''} ${r['主管專用註記'] || ''} ${r['催繳紀錄'] || ''}`.toLowerCase();
+        const text = `${r['編號'] || ''} ${parsedCat.main} ${parsedCat.sub} ${r['原支付方式'] || ''} ${r['病歷號'] || ''} ${r['病人姓名'] || ''} ${r['欠費說明與進度'] || ''} ${r['進度追蹤'] || ''} ${r['交班人'] || ''} ${r['主管專用註記'] || ''} ${r['催繳紀錄'] || ''}`.toLowerCase();
         return text.includes(kw);
       }), sortOrder);
     }
@@ -1985,8 +2029,8 @@
         const supervisorNote = directSupervisorNote || inheritedNote;
         const style = getCategoryStyle(parsedCat.main);
         const imgGrid = renderAttachmentsBlock(r['圖片']);
-        const historyLines = String(r['異動歷程'] || '').split('\n').map(s => s.trim()).filter(Boolean);
         const colInfo = analyzeCollectionStatus(r);
+        const splitText = splitBackgroundAndProgress(r);
 
         // 僅在「退費」類別顯示原支付方式，欠費／行政業務／看診未批一律不顯示付費方式
         const showPayBadge = (parsedCat.main === '退費') && payMethod && payMethod !== '免';
@@ -2015,17 +2059,6 @@
             <span>${escapeHtml(supervisorNote)}</span>
           </span>` : '';
 
-        const historyHtml = historyLines.length > 0 ? `
-          <details class="mt-3 pt-2.5 border-t border-slate-100 text-xs">
-            <summary class="cursor-pointer font-bold text-slate-500 hover:text-slate-800 select-none flex items-center gap-1.5">
-              <i class="fa-solid fa-clock-rotate-left text-amber-600"></i>
-              <span>查看異動歷程（共 ${historyLines.length} 筆）</span>
-            </summary>
-            <ul class="mt-2 space-y-1.5 pl-3 border-l-2 border-amber-300 bg-slate-50 p-2.5 rounded-r-xl text-slate-600">
-              ${historyLines.map(line => `<li class="leading-relaxed break-words">${escapeHtml(line)}</li>`).join('')}
-            </ul>
-          </details>` : '';
-
         return `
           <article class="bg-white rounded-2xl shadow-sm border ${isResolved ? 'border-emerald-200 bg-emerald-50/15' : style.border} p-4 sm:p-5 transition">
             <div class="flex flex-wrap items-center justify-between gap-2 pb-3 mb-3 border-b border-slate-100">
@@ -2047,6 +2080,9 @@
                 ${collectionBadgesHtml}
 
                 <span class="font-bold text-slate-800 text-sm">
+                  病歷號：${escapeHtml(r['病歷號'] || '')} ・ ${escapeHtml(r['病人姓名'] || '')}
+                </span>
+
                 <!-- 金額顯示 -->
                 <span class="px-2.5 py-0.5 rounded-lg bg-slate-100 font-extrabold text-sm ${isResolved ? 'text-slate-500 line-through' : style.amountText}">
                   $${amount.toLocaleString()}
@@ -2091,7 +2127,24 @@
               </div>
             </div>
 
-            <div class="text-sm text-slate-800 whitespace-pre-line leading-relaxed break-words">${escapeHtml(r['欠費說明與進度'] || '')}</div>
+            <!-- 1. 背景說明（首次建檔事由） -->
+            <div class="space-y-1">
+              <div class="text-[11px] font-bold text-slate-400 flex items-center gap-1">
+                <i class="fa-solid fa-file-lines text-slate-400"></i>
+                <span>背景說明</span>
+              </div>
+              <div class="text-sm text-slate-800 whitespace-pre-line leading-relaxed break-words">${escapeHtml(splitText.background)}</div>
+            </div>
+
+            <!-- 2. 進度追蹤（第二次起後續聯繫與處理紀錄） -->
+            ${splitText.progress ? `
+              <div class="mt-3 p-3 rounded-xl bg-slate-50 border border-slate-200/90 space-y-1">
+                <div class="text-[11px] font-bold text-teal-800 flex items-center gap-1">
+                  <i class="fa-solid fa-list-check text-teal-700"></i>
+                  <span>進度追蹤</span>
+                </div>
+                <div class="text-sm text-slate-800 whitespace-pre-line leading-relaxed break-words">${escapeHtml(splitText.progress)}</div>
+              </div>` : ''}
 
             ${isResolved && r['結案備註'] ? `
               <div class="mt-3 px-3.5 py-2 rounded-xl bg-emerald-50 border border-emerald-200 text-xs text-emerald-800 font-semibold">
@@ -2104,7 +2157,6 @@
             </div>
 
             ${imgGrid}
-            ${historyHtml}
           </article>`;
       }).join('');
     }
@@ -2257,7 +2309,6 @@
 
         const parser = new DOMParser();
 
-        // 1. 解析 styles.xml 找出哪些 fontId 帶有 <strike/>，以及哪些 cellXfs (s index) 使用這些 fontId
         const stylesDoc = parser.parseFromString(await stylesFile.async('text'), 'application/xml');
         const strikeFontIds = new Set();
         const fonts = stylesDoc.getElementsByTagName('font');
@@ -2279,7 +2330,6 @@
           }
         }
 
-        // 2. 對應 workbook.xml 的工作表名稱與實際 worksheet XML 檔案路徑
         const relsDoc = parser.parseFromString(await relsFile.async('text'), 'application/xml');
         const rIdToTarget = {};
         const rels = relsDoc.getElementsByTagName('Relationship');
@@ -2395,7 +2445,6 @@
       const ws = currentExcelWorkbook.Sheets[sheetName];
       if (!ws) return;
 
-      // 使用 raw: true 確保日期儲存格取得原始 Excel 序列值（如 46235 -> 2026/08/01）
       const rows = XLSX.utils.sheet_to_json(ws, { header: 1, raw: true, defval: '' });
       const struckRowsSet = currentExcelStrikeMap[sheetName] || new Set();
 
@@ -2886,7 +2935,14 @@
         document.getElementById('arrAmount').value = '';
         document.getElementById('arrPaidAmount').value = '';
         document.getElementById('paidAmountGroup').classList.add('hidden');
-        document.getElementById('arrContent').value = '';
+        document.getElementById('arrBackgroundContent').value = '';
+        document.getElementById('arrBackgroundContent').readOnly = false;
+        document.getElementById('arrBackgroundContent').className = 'w-full px-3.5 py-2.5 border border-slate-300 rounded-xl text-sm leading-relaxed focus:ring-2 focus:ring-teal-600 focus:outline-none';
+        document.getElementById('arrBackgroundLockBadge').classList.add('hidden');
+        document.getElementById('arrProgressGroup').classList.add('hidden');
+        document.getElementById('arrExistingProgressBox').classList.add('hidden');
+        document.getElementById('arrExistingProgressText').textContent = '';
+        document.getElementById('arrProgressAppendInput').value = '';
         document.getElementById('arrSupervisorNote').value = '';
         document.getElementById('arrFileInput').value = '';
         editingOriginalAmount = 0;
@@ -2950,7 +3006,45 @@
       document.getElementById('arrPaidAmount').value = '';
       document.getElementById('origAmtHint').textContent = editingOriginalAmount.toLocaleString();
       document.getElementById('paidAmountGroup').classList.remove('hidden');
-      document.getElementById('arrContent').value = item['欠費說明與進度'] || '';
+
+      const splitText = splitBackgroundAndProgress(item);
+      const bgTextarea = document.getElementById('arrBackgroundContent');
+      const bgLockBadge = document.getElementById('arrBackgroundLockBadge');
+      bgTextarea.value = splitText.background;
+      if (currentStaff.isSupervisor) {
+        bgTextarea.readOnly = false;
+        bgTextarea.className = 'w-full px-3.5 py-2.5 border border-slate-300 bg-white rounded-xl text-sm leading-relaxed focus:ring-2 focus:ring-teal-600 focus:outline-none';
+        bgLockBadge.classList.add('hidden');
+      } else {
+        bgTextarea.readOnly = true;
+        bgTextarea.className = 'w-full px-3.5 py-2.5 border border-slate-200 bg-slate-100 text-slate-600 rounded-xl text-sm leading-relaxed cursor-not-allowed focus:outline-none';
+        bgLockBadge.classList.remove('hidden');
+      }
+
+      document.getElementById('arrProgressGroup').classList.remove('hidden');
+      const existingProgressBox = document.getElementById('arrExistingProgressBox');
+      const existingProgressText = document.getElementById('arrExistingProgressText');
+      const progressAppendInput = document.getElementById('arrProgressAppendInput');
+      const stampBadge = document.getElementById('arrProgressAutoStampBadge');
+
+      const existingProgress = splitText.progress.trim();
+      if (existingProgress) {
+        existingProgressBox.classList.remove('hidden');
+        existingProgressText.textContent = existingProgress;
+      } else {
+        existingProgressBox.classList.add('hidden');
+        existingProgressText.textContent = '';
+      }
+      progressAppendInput.value = '';
+
+      const nowTw = new Date(new Date().toLocaleString('en-US', { timeZone: 'Asia/Taipei' }));
+      const hh = String(nowTw.getHours()).padStart(2, '0');
+      const mm = String(nowTw.getMinutes()).padStart(2, '0');
+      const previewStamp = `${nowTw.getMonth() + 1}/${nowTw.getDate()} ${hh}:${mm} (${currentStaff.name || currentStaff.id})：`;
+      if (stampBadge) {
+        stampBadge.innerHTML = `<i class="fa-regular fa-clock mr-1"></i>存檔自動前綴：${escapeHtml(previewStamp)}`;
+      }
+
       const pid = String(item['病歷號'] || '').trim();
       const samePatientUnresolved = pid
         ? arrearsData.filter(r => String(r['病歷號'] || '').trim() === pid && String(r['狀態'] || '未結案').trim() !== '已結清')
@@ -2971,6 +3065,9 @@
       handleMainCategoryChange(true);
       renderModalPreviews('arrears');
       document.getElementById('arrearsModal').classList.remove('hidden');
+      setTimeout(() => {
+        progressAppendInput.focus();
+      }, 60);
     }
 
     function handleMainCategoryChange(keepSub = false) {
@@ -3500,12 +3597,14 @@
       const author = document.getElementById('arrAuthor').value.trim();
       const amount = Number(document.getElementById('arrAmount').value);
       const paidAmount = Number(document.getElementById('arrPaidAmount').value) || 0;
-      const content = document.getElementById('arrContent').value.trim();
+      const backgroundNote = document.getElementById('arrBackgroundContent').value.trim();
+      const appendProgressNote = document.getElementById('arrProgressAppendInput').value.trim();
+      const existingProgressText = document.getElementById('arrExistingProgressText').textContent.trim();
       const supervisorNote = currentStaff.isSupervisor ? document.getElementById('arrSupervisorNote').value.trim() : '';
       const syncSupervisorNoteToPatient = currentStaff.isSupervisor && Boolean(document.getElementById('arrSyncPatientNote')?.checked);
 
-      if (!patientId || !patientName || !handoverDate || !content || isNaN(amount)) {
-        showToast('請完整填寫病歷號、病人姓名、日期、金額與說明', 'error');
+      if (!patientId || !patientName || !handoverDate || !backgroundNote || isNaN(amount)) {
+        showToast('請完整填寫病歷號、病人姓名、日期、金額與背景說明', 'error');
         return;
       }
 
@@ -3515,6 +3614,18 @@
 
       try {
         const isEdit = Boolean(rowIndex);
+        const nowTw = new Date(new Date().toLocaleString('en-US', { timeZone: 'Asia/Taipei' }));
+        const hh = String(nowTw.getHours()).padStart(2, '0');
+        const mm = String(nowTw.getMinutes()).padStart(2, '0');
+        const stampedAppend = appendProgressNote
+          ? `${nowTw.getMonth() + 1}/${nowTw.getDate()} ${hh}:${mm} (${currentStaff.name || currentStaff.id})：${appendProgressNote}`
+          : '';
+        const mergedProgress = stampedAppend
+          ? (existingProgressText ? `${existingProgressText}\n${stampedAppend}` : stampedAppend)
+          : existingProgressText;
+        const combinedLegacyContent = mergedProgress
+          ? `${backgroundNote}\n\n【追蹤狀況】\n${mergedProgress}`
+          : backgroundNote;
         const payload = isEdit ? {
           pwd: currentPwd,
           pass: currentPass,
@@ -3525,7 +3636,10 @@
           patientName,
           amount,
           paidAmount,
-          content,
+          content: combinedLegacyContent,
+          backgroundNote,
+          appendProgressNote,
+          progressNote: mergedProgress,
           existingImages: existingImageUrls,
           newImages: newCompressedImages,
           author,
@@ -3541,7 +3655,8 @@
           patientId,
           patientName,
           amount,
-          content,
+          content: backgroundNote,
+          backgroundNote,
           images: newCompressedImages,
           author,
           category,
@@ -3598,6 +3713,7 @@
       }
     }
 
+    // ==================== 匯出 Excel CSV 報表 ====================
     function downloadCSVFile(filename, rows) {
       const csvContent = '\uFEFF' + rows.map(row =>
         row.map(cell => `"${String(cell ?? '').replace(/"/g, '""')}"`).join(',')
@@ -3639,18 +3755,13 @@
           showToast('目前篩選條件下沒有可匯出的費用／行政交班紀錄', 'error');
           return;
         }
-        const rows = [['編號', '狀態', '催繳進度', '大類別', '子類別', '原支付方式', '病歷號', '病人姓名', '待處理金額', '交班日期', '登錄人', '主管專用註記', '說明與處理進度', '結案備註', '異動歷程', '建立時間']];
+        const rows = [['編號', '狀態', '大類別', '子類別', '原支付方式', '病歷號', '病人姓名', '待處理金額', '交班日期', '登錄人', '主管專用註記', '背景說明', '進度追蹤', '結案備註', '異動歷程', '建立時間']];
         list.forEach(r => {
           const parsedCat = parseCategoryField(r['追蹤類別']);
-          const colInfo = analyzeCollectionStatus(r);
-          const colSummary = [
-            colInfo.callCount > 0 ? `已電催(${colInfo.callCount}次)` : '',
-            colInfo.letterCount > 0 ? '已寄催繳信' : ''
-          ].filter(Boolean).join('、') || '尚未催款';
+          const splitText = splitBackgroundAndProgress(r);
           rows.push([
             r['編號'] || '',
             r['狀態'] || '未結案',
-            colSummary,
             parsedCat.main,
             parsedCat.sub,
             r['原支付方式'] || '',
@@ -3660,7 +3771,8 @@
             formatDisplayDate(r['交班日期']),
             r['交班人'] || '',
             r['主管專用註記'] || '',
-            r['欠費說明與進度'] || '',
+            splitText.background,
+            splitText.progress,
             r['結案備註'] || '',
             String(r['異動歷程'] || '').replace(/\n+/g, ' | '),
             formatDateTime(r['建立時間'])
