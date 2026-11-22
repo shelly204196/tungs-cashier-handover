@@ -1305,47 +1305,6 @@
         btn.className = (key === valid)
           ? 'px-2 py-1 rounded-lg text-[11px] font-bold bg-teal-600 text-white shadow-2xs transition cursor-pointer'
           : 'px-2 py-1 rounded-lg text-[11px] font-bold text-teal-200 hover:text-white transition cursor-pointer';
-      });
-
-      if (notify) showToast(`字體大小已切換為「${labels[valid]}」`, 'info');
-    }
-
-    function getTodayISO() {
-      const now = new Date();
-      const tw = new Date(now.toLocaleString('en-US', { timeZone: 'Asia/Taipei' }));
-      const y = tw.getFullYear();
-      const m = String(tw.getMonth() + 1).padStart(2, '0');
-      const d = String(tw.getDate()).padStart(2, '0');
-      return `${y}-${m}-${d}`;
-    }
-
-    function formatDisplayDate(val) {
-      if (!val) return '';
-      const str = String(val).trim();
-      if (/^\d{4}\/\d{1,2}\/\d{1,2}$/.test(str)) {
-        const parts = str.split('/');
-        return `${parts[0]}/${parts[1].padStart(2, '0')}/${parts[2].padStart(2, '0')}`;
-      }
-      const d = new Date(str);
-      if (isNaN(d.getTime())) return str;
-      return `${d.getFullYear()}/${String(d.getMonth() + 1).padStart(2, '0')}/${String(d.getDate()).padStart(2, '0')}`;
-    }
-
-    function formatDateTime(val) {
-      if (!val) return '';
-      const str = String(val).trim();
-      const d = new Date(str);
-      if (isNaN(d.getTime())) return str;
-      return `${d.getFullYear()}/${String(d.getMonth() + 1).padStart(2, '0')}/${String(d.getDate()).padStart(2, '0')} ${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}`;
-    }
-
-    function toInputDate(val) {
-      if (!val) return getTodayISO();
-      const d = new Date(val);
-      if (isNaN(d.getTime())) {
-        const cleaned = String(val).replace(/\//g, '-');
-        return /^\d{4}-\d{2}-\d{2}/.test(cleaned) ? cleaned.slice(0, 10) : getTodayISO();
-      }
       return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
     }
 
@@ -1375,34 +1334,73 @@
 
     function getDocIconMeta(fileName) {
       const lower = String(fileName || '').toLowerCase();
-      if (lower.endsWith('.pdf')) return { icon: 'fa-file-pdf', color: 'text-rose-600 bg-rose-50 border-rose-200', badge: 'PDF' };
-      if (lower.endsWith('.doc') || lower.endsWith('.docx')) return { icon: 'fa-file-word', color: 'text-blue-600 bg-blue-50 border-blue-200', badge: 'WORD' };
-      if (lower.endsWith('.xls') || lower.endsWith('.xlsx') || lower.endsWith('.csv')) return { icon: 'fa-file-excel', color: 'text-emerald-600 bg-emerald-50 border-emerald-200', badge: 'EXCEL' };
+      if (lower.endsWith('.pdf')) {
+        return { icon: 'fa-file-pdf', color: 'text-rose-600 bg-rose-50 border-rose-200', badge: 'PDF' };
+      }
+      if (lower.endsWith('.doc') || lower.endsWith('.docx')) {
+        return { icon: 'fa-file-word', color: 'text-blue-600 bg-blue-50 border-blue-200', badge: 'WORD' };
+      }
+      if (lower.endsWith('.xls') || lower.endsWith('.xlsx') || lower.endsWith('.csv')) {
+        return { icon: 'fa-file-excel', color: 'text-emerald-600 bg-emerald-50 border-emerald-200', badge: 'EXCEL' };
+      }
       return { icon: 'fa-file-lines', color: 'text-slate-600 bg-slate-100 border-slate-200', badge: 'FILE' };
     }
 
-    function getDirectDownloadUrl(rawUrl) {
+    // 解析 Google Drive 檔案 ID
+    function extractDriveFileId(rawUrl) {
       const str = String(rawUrl || '').trim();
-      const match = str.match(/\/file\/d\/([a-zA-Z0-9_-]+)/) || str.match(/[?&]id=([a-zA-Z0-9_-]+)/);
-      if (match && match[1]) {
-        return `https://drive.google.com/uc?export=download&confirm=t&id=${match[1]}`;
-      }
-      return str;
+      const match = str.match(/\/file\/d\/([a-zA-Z0-9_-]+)/) || str.match(/\/d\/([a-zA-Z0-9_-]+)/) || str.match(/[?&]id=([a-zA-Z0-9_-]+)/);
+      return match ? match[1] : '';
     }
 
-    function triggerSilentDownload(event, rawUrl, fileName) {
-      if (event) event.preventDefault();
-      const downloadUrl = getDirectDownloadUrl(rawUrl);
-      showToast(`正在下載「${fileName}」...`, 'info');
+    const privateBlobUrlCache = {};
 
-      let iframe = document.getElementById('silentDownloadFrame');
-      if (!iframe) {
-        iframe = document.createElement('iframe');
-        iframe.id = 'silentDownloadFrame';
-        iframe.style.display = 'none';
-        document.body.appendChild(iframe);
+    async function fetchPrivateDriveDataUrl(rawUrl) {
+      const fileId = extractDriveFileId(rawUrl);
+      if (!fileId) return rawUrl;
+      if (privateBlobUrlCache[fileId]) return privateBlobUrlCache[fileId];
+
+      const json = await postToGas({
+        sessionToken: currentSessionToken,
+        action: 'getAttachment',
+        fileId: fileId
+      });
+      if (json.status === 'success' && json.base64) {
+        const dataUrl = `data:${json.mimeType || 'application/octet-stream'};base64,${json.base64}`;
+        privateBlobUrlCache[fileId] = dataUrl;
+        return dataUrl;
       }
-      iframe.src = downloadUrl;
+      throw new Error(json.message || '附件讀取失敗');
+    }
+
+    // 圖片載入失敗（私人權限阻擋直接公開存取）時，自動透過已驗證的 Session Token 安全載入
+    async function loadProtectedThumb(imgEl, rawUrl) {
+      if (imgEl.dataset.proxyLoaded) return;
+      imgEl.dataset.proxyLoaded = '1';
+      try {
+        const dataUrl = await fetchPrivateDriveDataUrl(rawUrl);
+        imgEl.src = dataUrl;
+      } catch (e) {
+        imgEl.alt = '需登入權限檢視';
+      }
+    }
+
+    // 透過已驗證 Session Token 安全下載私人雲端文件（不再依賴公開 Drive 連結）
+    async function triggerSilentDownload(event, rawUrl, fileName) {
+      if (event) event.preventDefault();
+      showToast(`正在安全解密下載「${fileName}」...`, 'info');
+      try {
+        const dataUrl = await fetchPrivateDriveDataUrl(rawUrl);
+        const link = document.createElement('a');
+        link.href = dataUrl;
+        link.download = fileName || '附件檔案';
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        showToast(`「${fileName}」下載完成`, 'success');
+      } catch (err) {
+        showToast(`下載失敗：${err.message || '請確認登入狀態'}`, 'error');
+      }
     }
 
     function renderAttachmentsBlock(rawField) {
@@ -1415,7 +1413,9 @@
       const imgHtml = imgItems.length > 0 ? `
         <div class="flex flex-wrap gap-2">
           ${imgItems.map(item => `
-            <img src="${escapeHtml(item.url)}" onclick="openLightbox('${escapeHtml(item.url)}')" loading="lazy"
+            <img src="${escapeHtml(item.url)}"
+              onerror="loadProtectedThumb(this, '${escapeHtml(item.url)}')"
+              onclick="openLightbox('${escapeHtml(item.url)}')" loading="lazy"
               class="w-20 h-16 object-cover rounded-xl border border-slate-200 cursor-zoom-in hover:opacity-90 transition bg-slate-50">
           `).join('')}
         </div>` : '';
@@ -1424,14 +1424,14 @@
         <div class="flex flex-wrap gap-2 ${imgItems.length > 0 ? 'mt-2' : ''}">
           ${docItems.map(item => {
             const meta = getDocIconMeta(item.name);
-            const downloadUrl = getDirectDownloadUrl(item.url);
             return `
-              <a href="${escapeHtml(downloadUrl)}"
+              <a href="#download"
                 onclick="triggerSilentDownload(event, '${escapeHtml(item.url)}', '${escapeHtml(item.name)}')"
                 class="inline-flex items-center gap-2 px-3 py-1.5 rounded-xl border text-xs font-bold hover:opacity-85 transition shadow-2xs cursor-pointer ${meta.color}"
-                title="點擊直接下載：${escapeHtml(item.name)}">
+                title="點擊安全下載：${escapeHtml(item.name)}">
                 <i class="fa-solid ${meta.icon} text-sm"></i>
                 <span class="max-w-[180px] truncate">${escapeHtml(item.name)}</span>
+                <i class="fa-solid fa-lock text-[10px] opacity-70"></i>
                 <i class="fa-solid fa-download text-[11px] opacity-80"></i>
               </a>`;
           }).join('')}
@@ -1480,88 +1480,6 @@
       updateBadges();
       updateQuickDaysUI();
       renderCurrentTab();
-    }
-
-    // ==================== 雙重登入驗證 ====================
-    async function handleLogin() {
-      const staffId = document.getElementById('staffIdInput').value.trim();
-      const deptPass = document.getElementById('deptPassInput').value.trim();
-      if (!staffId || !deptPass) {
-        const errBox = document.getElementById('loginError');
-        document.getElementById('loginErrorText').textContent = '請輸入員工代號及單位指定密碼';
-        errBox.classList.remove('hidden');
-        return;
-      }
-
-      const btn = document.getElementById('loginBtn');
-      const errBox = document.getElementById('loginError');
-      const errText = document.getElementById('loginErrorText');
-
-      errBox.classList.add('hidden');
-      btn.disabled = true;
-      btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i><span>驗證中...</span>';
-
-      try {
-        const res = await fetch(`${currentGasUrl}?pwd=${encodeURIComponent(staffId)}&pass=${encodeURIComponent(deptPass)}&_t=${Date.now()}`);
-        const json = await res.json();
-
-        if (json.status === 'success') {
-          currentPwd = staffId;
-          currentPass = deptPass;
-          currentStaff = {
-            id: (json.staff && json.staff.id) || staffId,
-            name: (json.staff && json.staff.name) || '',
-            isSupervisor: Boolean(json.staff && json.staff.isSupervisor)
-          };
-          generalData = Array.isArray(json.data) ? json.data : [];
-          arrearsData = Array.isArray(json.arrearsData) ? json.arrearsData : [];
-
-          enterAuthenticatedView();
-          showToast(`歡迎回來，${currentStaff.name || currentStaff.id}`, 'success');
-        } else {
-          errText.textContent = json.message || '員工代號或單位指定密碼錯誤';
-          errBox.classList.remove('hidden');
-        }
-      } catch (err) {
-        errText.textContent = '連線異常，請確認網路狀態或聯繫系統管理人員';
-        errBox.classList.remove('hidden');
-      } finally {
-        btn.disabled = false;
-        btn.innerHTML = '<i class="fa-solid fa-right-to-bracket"></i><span>驗證並進入系統</span>';
-      }
-    }
-
-    async function fetchAllData(notify = false) {
-      if (!currentPwd || !currentPass) return;
-      const icon = document.getElementById('refreshIcon');
-      icon.classList.add('fa-spin');
-      try {
-        const res = await fetch(`${currentGasUrl}?pwd=${encodeURIComponent(currentPwd)}&pass=${encodeURIComponent(currentPass)}&_t=${Date.now()}`);
-        const json = await res.json();
-        if (json.status === 'success') {
-          generalData = Array.isArray(json.data) ? json.data : [];
-          arrearsData = Array.isArray(json.arrearsData) ? json.arrearsData : [];
-          updateBadges();
-          renderCurrentTab();
-          if (notify) showToast('資料已同步最新狀態', 'success');
-        }
-      } catch (err) {
-        if (notify) showToast('同步資料失敗，請稍後再試', 'error');
-      } finally {
-        icon.classList.remove('fa-spin');
-      }
-    }
-
-    function handleLogout() {
-      currentPwd = '';
-      currentPass = '';
-      currentStaff = { id: '', name: '', isSupervisor: false };
-      generalData = [];
-      arrearsData = [];
-      document.getElementById('staffIdInput').value = '';
-      document.getElementById('deptPassInput').value = '';
-      document.getElementById('mainView').classList.add('hidden');
-      document.getElementById('loginView').classList.remove('hidden');
     }
 
     function updateBadges() {
@@ -3546,13 +3464,19 @@
       container.innerHTML = existingHtml + newHtml;
     }
 
-    function openLightbox(url) {
+    async function openLightbox(url) {
       lightboxRotation = 0;
       lightboxScale = 1;
       const img = document.getElementById('lightboxImg');
       img.src = url;
       applyLightboxTransform();
       document.getElementById('lightboxModal').classList.remove('hidden');
+      try {
+        const dataUrl = await fetchPrivateDriveDataUrl(url);
+        if (!document.getElementById('lightboxModal').classList.contains('hidden')) {
+          img.src = dataUrl;
+        }
+      } catch (e) {}
     }
 
     function rotateLightbox(deltaDeg) {
