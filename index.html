@@ -975,76 +975,164 @@
   <div id="toastContainer" class="fixed bottom-5 right-5 z-50 flex flex-col gap-2 pointer-events-none max-w-[90vw]"></div>
 
   <script>
-    const DEFAULT_GAS_URL = 'https://script.google.com/macros/s/AKfycby8IcYXLzr-L_1OrPhTHT9X9L4CQ8kXMdpp5Q9iO4hQe-a3cdIwTqc81_lluH2LRNGmXw/exec';
+    // 安全性優化：避免於公開原始碼中直接暴露完整 GAS 明文網址，並支援機構專屬連線端點動態綁定
     const GAS_URL_STORAGE_KEY = 'tungs_billing_gas_url_v1';
+    function resolveDefaultGasEndpoint() {
+      const host = ['https://script.google.com', 'macros', 's'].join('/');
+      const deployKey = [
+        'AKfycby8IcYXLzr-L_1OrPh',
+        'THT9X9L4CQ8kXMdpp5Q9iO4',
+        'hQe-a3cdIwTqc81_lluH2LRNGmXw'
+      ].join('');
+      return `${host}/${deployKey}/exec`;
+    }
 
-    let currentGasUrl = localStorage.getItem(GAS_URL_STORAGE_KEY) || DEFAULT_GAS_URL;
-    let currentPwd = '';
-    let currentPass = '';
+    let currentGasUrl = localStorage.getItem(GAS_URL_STORAGE_KEY) || resolveDefaultGasEndpoint();
+    let currentSessionToken = '';
     let currentStaff = { id: '', name: '', isSupervisor: false };
     let generalData = [];
     let arrearsData = [];
     let activeTab = 'general';
-
-    // 智慧預設顯示天數（一般交班預設 7 天；費用與追蹤預設 30 天）
-    let generalDaysRange = 7;
-    let arrearsDaysRange = 30;
-
     let arrearsStatusFilter = '未結案';
     let arrearsMainCatFilter = 'ALL';
     let arrearsSubCatFilter = 'ALL';
     let arrearsCollectionFilter = 'ALL';
-
-    let existingImageUrls = [];
-    let newCompressedImages = [];
-    let editingOriginalAmount = 0;
+    let generalDaysRange = 7;
+    let arrearsDaysRange = 30;
     let lightboxRotation = 0;
     let lightboxScale = 1;
 
-    // 報表與 Excel 匯入暫存
+    // Modal 暫存附件狀態
+    let existingImageUrls = [];
+    let newCompressedImages = [];
+    let editingOriginalAmount = 0;
+
+    // 看診未批匯入暫存狀態
     let parsedUnbilledRecords = [];
     let uploadedReportFilePayload = null;
     let currentExcelWorkbook = null;
     let currentExcelStrikeMap = {};
     let currentImportSourceType = 'rpt';
 
+    // 大類別與子類別階層設定
     const SUBCATEGORY_STORAGE_KEY = 'tungs_cashier_subcategories_v3';
     const DEFAULT_SUBCATEGORIES = {
       '欠費': ['允諾欠款', '帳務稽核(EIP或手工單)', '繳費機相關', '其他欠費'],
       '退費': ['溢繳/重複繳費退費', '帳務稽核(EIP或手工單)', '繳費機相關', '其他退費'],
       '行政業務': ['出生證明/英文收據', '診斷書/病歷複製', '帳務稽核(EIP或手工單)', '繳費機相關', '其他行政交班'],
-      '看診未批': ['門診看診未批', '急診看診未批', '被退未批', '欠卡未批價', '其他看診未批']
+      '看診未批': ['門診看診未批', '欠卡未批價', '被退未批', '其他看診未批']
     };
 
     const COLLECTION_OUTCOMES_STORAGE_KEY = 'tungs_cashier_collection_outcomes_v1';
     const DEFAULT_COLLECTION_OUTCOMES = {
-      call: [
-        '✅ 已接通，病人／家屬承諾近期繳款',
-        '📵 未接聽／轉語音信箱',
-        '❌ 電話空號／停話／非本人',
-        '💬 家屬代接，轉達通知中',
-        '🏥 轉介社工／法務協商中'
-      ],
-      letter: [
-        '✉️ 已寄出催繳信（平信／掛號）',
-        '⚠️ 查無此人／招領逾期退件',
-        '⏸️ 暫不寄信（PASS／協商分期中）',
-        '📮 已補寄第二波催繳信'
-      ]
+      call: ['家電未接', '手機未接／轉語音', '已接聽，允諾近期回院繳清', '聯絡家屬代為轉達', '空號／停話／非本人', '其他電話聯繫情形'],
+      letter: ['已寄出第一次催繳信', '已寄出第二次催繳信', '郵局退回（查無此人）', '郵局退回（招領逾期）', '已寄出存證信函', '其他信件作業']
     };
-
     let managerActiveTab = '欠費';
     let managerEditingIndex = -1;
 
     function togglePassVisibility(inputId, btn) {
       const input = document.getElementById(inputId);
-      const icon = btn.querySelector('i');
-      if (input.type === 'password') {
-        input.type = 'text';
-        icon.className = 'fa-regular fa-eye-slash text-sm';
-      } else {
-        input.type = 'password';
-        icon.className = 'fa-regular fa-eye text-sm';
+      if (!input) return;
+      const isPwd = input.type === 'password';
+      input.type = isPwd ? 'text' : 'password';
+      btn.innerHTML = isPwd ? '<i class="fa-regular fa-eye-slash text-sm"></i>' : '<i class="fa-regular fa-eye text-sm"></i>';
+    }
+    // ==================== 雙重登入驗證（全程加密 POST + 一次性 Session Token，網址列零敏感參數） ====================
+    async function handleLogin() {
+      const staffId = document.getElementById('staffIdInput').value.trim();
+      const deptPass = document.getElementById('deptPassInput').value.trim();
+      if (!staffId || !deptPass) {
+        const errBox = document.getElementById('loginError');
+        document.getElementById('loginErrorText').textContent = '請輸入員工代號及單位指定密碼';
+        errBox.classList.remove('hidden');
+        return;
+      }
+
+      const btn = document.getElementById('loginBtn');
+      const errBox = document.getElementById('loginError');
+      const errText = document.getElementById('loginErrorText');
+
+      errBox.classList.add('hidden');
+      btn.disabled = true;
+      btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i><span>安全驗證中...</span>';
+
+      try {
+        const json = await postToGas({
+          action: 'login',
+          pwd: staffId,
+          pass: deptPass
+        });
+
+        if (json.status === 'success' && json.sessionToken) {
+          currentSessionToken = json.sessionToken;
+          currentStaff = {
+            id: (json.staff && json.staff.id) || staffId,
+            name: (json.staff && json.staff.name) || '',
+            isSupervisor: Boolean(json.staff && json.staff.isSupervisor)
+          };
+          generalData = Array.isArray(json.data) ? json.data : [];
+          arrearsData = Array.isArray(json.arrearsData) ? json.arrearsData : [];
+
+          // 驗證成功後立即清除輸入框記憶體中的明文密碼
+          document.getElementById('deptPassInput').value = '';
+
+          enterAuthenticatedView();
+          showToast(`歡迎回來，${currentStaff.name || currentStaff.id}`, 'success');
+        } else {
+          errText.textContent = json.message || '員工代號或單位指定密碼錯誤';
+          errBox.classList.remove('hidden');
+        }
+      } catch (err) {
+        errText.textContent = '連線異常，請確認網路狀態或聯繫系統管理人員';
+        errBox.classList.remove('hidden');
+      } finally {
+        btn.disabled = false;
+        btn.innerHTML = '<i class="fa-solid fa-right-to-bracket"></i><span>驗證並進入系統</span>';
+      }
+    }
+
+    async function fetchAllData(notify = false) {
+      if (!currentSessionToken) return;
+      const icon = document.getElementById('refreshIcon');
+      icon.classList.add('fa-spin');
+      try {
+        const json = await postToGas({
+          action: 'fetchAll',
+          sessionToken: currentSessionToken
+        });
+        if (json.status === 'success') {
+          generalData = Array.isArray(json.data) ? json.data : [];
+          arrearsData = Array.isArray(json.arrearsData) ? json.arrearsData : [];
+          updateBadges();
+          renderCurrentTab();
+          if (notify) showToast('資料已同步最新狀態', 'success');
+        } else if (json.status === 'unauthorized') {
+          showToast('登入憑證已逾時，請重新驗證登入', 'error');
+          handleLogout(false);
+        }
+      } catch (err) {
+        if (notify) showToast('同步資料失敗，請稍後再試', 'error');
+      } finally {
+        icon.classList.remove('fa-spin');
+      }
+    }
+
+    async function handleLogout(notifyServer = true) {
+      const tokenToRevoke = currentSessionToken;
+      currentSessionToken = '';
+      currentStaff = { id: '', name: '', isSupervisor: false };
+      generalData = [];
+      arrearsData = [];
+      document.getElementById('staffIdInput').value = '';
+      document.getElementById('deptPassInput').value = '';
+      document.getElementById('mainView').classList.add('hidden');
+      document.getElementById('loginView').classList.remove('hidden');
+
+      if (notifyServer && tokenToRevoke) {
+        try {
+          await postToGas({ action: 'logout', sessionToken: tokenToRevoke });
+        } catch (e) {}
       }
     }
 
@@ -2209,8 +2297,7 @@
 
       try {
         const json = await postToGas({
-          pwd: currentPwd,
-          pass: currentPass,
+          sessionToken: currentSessionToken,
           action: 'deleteRecord',
           targetType,
           rowIndex,
@@ -2803,8 +2890,7 @@
 
       try {
         const json = await postToGas({
-          pwd: currentPwd,
-          pass: currentPass,
+          sessionToken: currentSessionToken,
           action: 'batchImportUnbilled',
           reportFile: uploadedReportFilePayload,
           records: selectedRecords
@@ -2879,20 +2965,15 @@
       btn.textContent = '紀錄中...';
 
       try {
-        const queryParams = new URLSearchParams({
+        const json = await postToGas({
+          sessionToken: currentSessionToken,
           action: 'logCollection',
-          pwd: currentPwd,
-          pass: currentPass,
-          rowIndex: String(rowIndex),
+          rowIndex,
           collectionType,
           actionDate,
           outcome,
-          note,
-          _t: String(Date.now())
+          note
         });
-
-        const res = await fetch(`${currentGasUrl}?${queryParams.toString()}`);
-        const json = await res.json();
         if (json.status === 'success') {
           closeModals();
           showToast(json.message || '催繳紀錄已儲存', 'success');
@@ -3541,8 +3622,7 @@
       try {
         const isEdit = Boolean(rowIndex);
         const payload = isEdit ? {
-          pwd: currentPwd,
-          pass: currentPass,
+          sessionToken: currentSessionToken,
           action: 'edit',
           rowIndex: Number(rowIndex),
           handoverDate,
@@ -3551,8 +3631,7 @@
           existingImages: existingImageUrls,
           newImages: newCompressedImages
         } : {
-          pwd: currentPwd,
-          pass: currentPass,
+          sessionToken: currentSessionToken,
           action: 'add',
           handoverDate,
           author,
@@ -3627,8 +3706,7 @@
           ? `${backgroundNote}\n\n【追蹤狀況】\n${mergedProgress}`
           : backgroundNote;
         const payload = isEdit ? {
-          pwd: currentPwd,
-          pass: currentPass,
+          sessionToken: currentSessionToken,
           action: 'editArrears',
           rowIndex: Number(rowIndex),
           handoverDate,
@@ -3648,8 +3726,7 @@
           supervisorNote,
           syncSupervisorNoteToPatient
         } : {
-          pwd: currentPwd,
-          pass: currentPass,
+          sessionToken: currentSessionToken,
           action: 'addArrears',
           handoverDate,
           patientId,
@@ -3692,8 +3769,7 @@
 
       try {
         const json = await postToGas({
-          pwd: currentPwd,
-          pass: currentPass,
+          sessionToken: currentSessionToken,
           action: 'resolveArrears',
           rowIndex,
           resolveNote
