@@ -1305,6 +1305,45 @@
         btn.className = (key === valid)
           ? 'px-2 py-1 rounded-lg text-[11px] font-bold bg-teal-600 text-white shadow-2xs transition cursor-pointer'
           : 'px-2 py-1 rounded-lg text-[11px] font-bold text-teal-200 hover:text-white transition cursor-pointer';
+      });
+      if (notify && labels[valid]) {
+        showToast(`字體已切換為「${labels[valid]}」`, 'info');
+      }
+    }
+
+    function getTodayISO() {
+      const now = new Date();
+      const tw = new Date(now.toLocaleString('en-US', { timeZone: 'Asia/Taipei' }));
+      return `${tw.getFullYear()}-${String(tw.getMonth() + 1).padStart(2, '0')}-${String(tw.getDate()).padStart(2, '0')}`;
+    }
+
+    function formatDisplayDate(val) {
+      if (!val) return '';
+      const str = String(val).trim();
+      const iso = toInputDate(str);
+      if (iso) return iso.replace(/-/g, '/');
+      return str;
+    }
+
+    function formatDateTime(val) {
+      if (!val) return '';
+      const d = new Date(val);
+      if (isNaN(d.getTime())) return String(val).trim();
+      const y = d.getFullYear();
+      const m = String(d.getMonth() + 1).padStart(2, '0');
+      const day = String(d.getDate()).padStart(2, '0');
+      const hh = String(d.getHours()).padStart(2, '0');
+      const mm = String(d.getMinutes()).padStart(2, '0');
+      return `${y}/${m}/${day} ${hh}:${mm}`;
+    }
+
+    function toInputDate(val) {
+      if (!val) return '';
+      const str = String(val).trim();
+      const ymd = str.match(/^(\d{4})[\/\-](\d{1,2})[\/\-](\d{1,2})/);
+      if (ymd) return `${ymd[1]}-${ymd[2].padStart(2, '0')}-${ymd[3].padStart(2, '0')}`;
+      const d = new Date(str);
+      if (isNaN(d.getTime())) return '';
       return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
     }
 
